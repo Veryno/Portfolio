@@ -1,0 +1,71 @@
+/* MainContent.css */
+.main-content {
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: left;
+  color: #ffffff;
+}
+
+.intro-section {
+  margin-bottom: 20px;
+  max-width: 800px;
+}
+
+.intro-text {
+  font-size: 1rem; /* Unified font size using rem */
+  color: #e0e0e0;
+}
+
+.content-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 900px;
+}
+
+.tech-experience, .projects {
+  width: 45%;
+}
+
+.tech-experience {
+  text-align: left; /* Align text to the left */
+}
+
+.projects {
+  text-align: left; /* Align text to the left */
+  margin-left: 10%; /* Center projects section in middle area */
+}
+
+.section-title {
+  color: #ffffff;
+  font-size: 1.1rem; /* Bolded title with consistent size */
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.tech-experience ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.tech-experience li, .project-card p {
+  color: #e0e0e0;
+  font-size: 1rem; /* Unified font size using rem */
+  margin-bottom: 10px;
+}
+
+.project-card {
+  background-color: transparent; /* No background for project cards */
+  color: #e0e0e0;
+  margin-bottom: 20px;
+  text-align: left; /* Ensure project content is left-aligned */
+}
+
+.project-card h4 {
+  margin-top: 0;
+  font-weight: bold;
+}
