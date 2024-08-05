@@ -9,6 +9,9 @@ const Header = () => {
           <h1 className="header-title">Yaacob Abdullah</h1>
           <p className="header-subtitle">Software Engineer and Developer</p>
         </div>
+        <div className="header-right">
+          <img src="/profile.heic" alt="Yaacob Abdullah" className="profile-picture" />
+        </div>
       </div>
     </header>
   );

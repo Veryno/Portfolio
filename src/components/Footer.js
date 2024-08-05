@@ -1,5 +1,5 @@
 import React from 'react';
-import '../styles/Footer.css';  // Corrected import path
+import '../styles/Footer.css';
 import { FaGithub, FaLinkedin, FaEnvelope } from 'react-icons/fa';
 
 const Footer = () => {
@@ -7,22 +7,14 @@ const Footer = () => {
     <footer className="footer">
       <div className="footer-content">
         <div className="footer-left">
-          <a
-            href="/path-to-your-resume.pdf"
-            className="resume-link"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Downloadable Resume
-          </a>
           <div className="social-links">
-            <a href="https://github.com/your-github-username" target="_blank" rel="noopener noreferrer">
+            <a href="https://github.com/your-github-username" target="_blank" rel="noopener noreferrer" className="social-link">
               <FaGithub className="social-icon" />
             </a>
-            <a href="https://linkedin.com/in/your-linkedin-profile" target="_blank" rel="noopener noreferrer">
+            <a href="https://linkedin.com/in/your-linkedin-profile" target="_blank" rel="noopener noreferrer" className="social-link">
               <FaLinkedin className="social-icon" />
             </a>
-            <a href="mailto:your-email@example.com">
+            <a href="mailto:your-email@example.com" className="social-link">
               <FaEnvelope className="social-icon" />
             </a>
           </div>

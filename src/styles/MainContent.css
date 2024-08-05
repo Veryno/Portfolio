@@ -1,71 +1,90 @@
 /* MainContent.css */
 .main-content {
-  padding: 40px 20px;
+  padding: 20px 0; /* Vertical padding for consistency */
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start; /* Align items to the left */
+  justify-content: flex-start;
   text-align: left;
   color: #ffffff;
+  width: 100%;
+  max-width: 1000px; /* Ensure consistent container width */
+  margin: 0 auto; /* Center the main content horizontally */
+  box-sizing: border-box;
 }
 
 .intro-section {
-  margin-bottom: 20px;
-  max-width: 800px;
+  margin-bottom: 15px;
+  width: 100%;
 }
 
 .intro-text {
-  font-size: 1rem; /* Unified font size using rem */
+  font-size: 2rem;
   color: #e0e0e0;
+  font-weight: 300;
+  margin: 0;
+}
+
+.resume-section {
+  margin-bottom: 5px;
+  width: 100%;
+}
+
+.resume-link {
+  color: #2ecc71;
+  text-decoration: none;
+  font-size: 2rem;
+  transition: color 0.3s;
+}
+
+.resume-link:hover {
+  color: #27ae60;
 }
 
 .content-section {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
   width: 100%;
-  max-width: 900px;
+  margin-top: 5px;
 }
 
 .tech-experience, .projects {
-  width: 45%;
-}
-
-.tech-experience {
-  text-align: left; /* Align text to the left */
-}
-
-.projects {
-  text-align: left; /* Align text to the left */
-  margin-left: 10%; /* Center projects section in middle area */
+  width: calc(50% - 10px); /* Split content evenly */
 }
 
 .section-title {
   color: #ffffff;
-  font-size: 1.1rem; /* Bolded title with consistent size */
-  font-weight: bold;
-  margin-bottom: 20px;
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: 5px;
 }
 
-.tech-experience ul {
+.tech-experience ul,
+.projects ul {
   list-style-type: none;
   padding: 0;
+  margin: 0;
 }
 
-.tech-experience li, .project-card p {
-  color: #e0e0e0;
-  font-size: 1rem; /* Unified font size using rem */
+.tech-experience li,
+.projects li {
   margin-bottom: 10px;
 }
 
-.project-card {
-  background-color: transparent; /* No background for project cards */
+.experience-link, .project-link {
   color: #e0e0e0;
-  margin-bottom: 20px;
-  text-align: left; /* Ensure project content is left-aligned */
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.3s;
+  font-size: 1.8rem;
 }
 
-.project-card h4 {
-  margin-top: 0;
-  font-weight: bold;
+.experience-link:hover, .project-link:hover {
+  color: #2ecc71;
+}
+
+.link-icon {
+  margin-left: 5px;
+  font-size: 0.8rem;
 }
