@@ -7,7 +7,7 @@ const MainContent = () => {
     <main className="main-content">
       <div className="intro-section">
         <p className="intro-text">
-          I am a passionate software engineer with a strong focus on developing innovative and user-friendly solutions. With expertise in both front-end and back-end technologies, I strive to deliver high-quality software that meets the needs of users and clients alike.
+        Dedicated Computer Science student at CUNY Queens College, specializing in software engineering with a focus on full stack technologies. Proficient in a variety of programming languages and frameworks, developing innovative, user-friendly solutions. 
         </p>
       </div>
       <div className="resume-section">

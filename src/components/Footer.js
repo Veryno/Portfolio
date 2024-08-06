@@ -8,13 +8,13 @@ const Footer = () => {
       <div className="footer-content">
         <div className="footer-left">
           <div className="social-links">
-            <a href="https://github.com/your-github-username" target="_blank" rel="noopener noreferrer" className="social-link">
+            <a href="https://github.com/Veryno" target="_blank" rel="noopener noreferrer" className="social-link">
               <FaGithub className="social-icon" />
             </a>
-            <a href="https://linkedin.com/in/your-linkedin-profile" target="_blank" rel="noopener noreferrer" className="social-link">
+            <a href="https://www.linkedin.com/in/yaacobabdullah/" target="_blank" rel="noopener noreferrer" className="social-link">
               <FaLinkedin className="social-icon" />
             </a>
-            <a href="mailto:your-email@example.com" className="social-link">
+            <a href="mailto:yaacobabdullahh@gmail.com" className="social-link">
               <FaEnvelope className="social-icon" />
             </a>
           </div>

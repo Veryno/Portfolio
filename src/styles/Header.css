@@ -10,6 +10,7 @@
   max-width: 1000px; /* Align with container width */
   margin: 0 auto;
   box-sizing: border-box;
+  padding-right: 1 rem;
 }
 
 .header-content {

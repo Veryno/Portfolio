@@ -36,7 +36,7 @@ body, html {
   flex-grow: 1;
   width: 100%;
   max-width: 1000px;
-  padding: 20px 40px; /* Set padding to align content */
+
   box-sizing: border-box;
   overflow-y: auto;
 }
