@@ -46,13 +46,8 @@
 
 .tech-experience, .projects {
   width: calc(50%);
-<<<<<<< HEAD
   background-color: transparent; 
   border-radius: 8px; 
-=======
-  background-color: transparent; /* Transparent boxes */
-  border-radius: 8px; /* Add slight rounding */
->>>>>>> origin/master
 }
 
 .section-title {

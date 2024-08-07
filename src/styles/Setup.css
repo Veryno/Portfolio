@@ -20,24 +20,14 @@
 }
 
 .setup-category {
-<<<<<<< HEAD
-  font-size: 1.5rem;
-  font-weight: 700;
-=======
   font-size: 2rem;
   font-weight: 600;
->>>>>>> origin/master
   margin-bottom: 10px;
   color: #ffffff;
 }
 
 .setup-text {
-<<<<<<< HEAD
-  font-size: 1.5rem;
-  font-weight: 500;
-=======
   font-size: 1.8rem;
->>>>>>> origin/master
   line-height: 1.6;
   color: #e0e0e0;
   margin: 0;
