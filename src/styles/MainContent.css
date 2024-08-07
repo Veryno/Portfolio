@@ -7,7 +7,7 @@
   text-align: left;
   color: #fff;
   width: 100%;
-  max-width: 1200px; /* Adjusted max width */
+  max-width: 1200px; 
   margin: 0 auto;
   box-sizing: border-box;
   
@@ -19,7 +19,7 @@
 }
 
 .intro-text {
-  font-size: 2rem; /* Smaller font for better layout */
+  font-size: 1.5rem; 
   color: #fff;
   font-weight: 500;
   margin: 1;
@@ -31,9 +31,9 @@
 }
 
 .resume-link {
-  color: #2ecc71;
+  color: #4ee44e;
   text-decoration: none;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   transition: color 0.3s;
 }
@@ -48,14 +48,13 @@
 
 .tech-experience, .projects {
   width: calc(50%);
-  background-color: transparent; /* Transparent boxes */
-
-  border-radius: 8px; /* Add slight rounding */
+  background-color: transparent; 
+  border-radius: 8px; 
 }
 
 .section-title {
   color: #fff;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 20px;
 }
@@ -80,21 +79,117 @@
   transition: color 0.3s;
   font-size: 1.5rem;
 }
+.link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; 
+  height: 18px; 
+  margin-left: 8px; 
+  vertical-align: middle; 
+}
 
 .experience-link:hover, .project-link:hover {
-  color: #2ecc71;
+  color: #4ee44e;
+  transition: color 0.3s, transform 0.3s; 
 }
 
-@media (max-width: 768px ) {
+
+/* MainContent.css */
+@media (max-width: 768px) {
   .main-content {
-    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    color: #fff;
+    width: 100%;
+    max-width: 1200px; 
+    margin: 0 auto;
+    box-sizing: border-box;
+    
   }
+  
+  .intro-section {
+    margin-bottom: 15px;
+    width: 100%;
+  }
+  
+  .intro-text {
+    font-size: 1.2rem; 
+    color: #fff;
+    font-weight: 500;
+    margin: 1;
+  }
+  
+  .resume-section {
+    margin-bottom: 0px;
+    width: 100%;
+  }
+  
+  .resume-link {
+    color: #4ee44e;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 700;
+    transition: color 0.3s;
+  }
+  
   .content-section {
-    flex-direction: column; /* Stack elements vertically */
+    display: flex;
+    justify-content: space-between;
     width: 100%;
+    margin-top: 0px;
+  
   }
+  
   .tech-experience, .projects {
-    width: 100%;
+    width: calc(50%);
+    background-color: transparent; 
+  
+    border-radius: 8px;
+  }
+  
+  .section-title {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
     margin-bottom: 20px;
   }
-}
+  
+  .tech-experience ul,
+  .projects ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .tech-experience li,
+  .projects li {
+    margin-bottom: 10px;
+  }
+  
+  .experience-link, .project-link {
+    color: #fff;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.3s;
+    font-size: 1.1rem;
+  }
+  .link-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 10px; 
+    height: 10px; 
+    margin-left: 4px; 
+    vertical-align: middle; 
+  }
+  
+  .experience-link:hover, .project-link:hover {
+    color: #4ee44e;
+    transition: color 0.3s, transform 0.3s; 
+  }
+  
+  }

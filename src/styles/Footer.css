@@ -8,7 +8,7 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  max-width: 1200px; /* Align with main content width */
+  max-width: 1200px; 
   margin: 0 auto;
 }
 
@@ -32,22 +32,60 @@
   font-size: 2rem;
 }
 
-.social-link:hover {
-  color: #2ecc71;
+.social-link:hover, .setup-link:hover {
+  color: #4ee44e;
+  transition: color 0.3s, transform 0.3s; 
 }
 
-@media (max-width: 768px) {
-  .footer {
-    flex-direction: column; /* Stack items vertically on small screens */
-    padding: 10px;
-  }
-  .footer-content {
-    flex-direction: column;
-    align-items: center;
-  }
-}
-
-.footer-setup-link{
+.setup-link{
   color: #e0e0e0;
   font-size: 1.5rem;
+  text-decoration: none;
+}
+
+
+@media (max-width: 768px) {
+.footer {
+  font: BlinkMacSystemFont;
+  background-color: transparent;
+  padding: 20px 0;
+  text-align: center;
+  border-top: 1px solid #444;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 1200px; 
+  margin: 0 auto;
+}
+
+.footer-content {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.social-links {
+  display: flex;
+  gap: 15px;
+}
+
+.social-link {
+  color: #e0e0e0;
+  transition: color 0.3s;
+  font-size: 1.5rem;
+}
+
+.social-link:hover, .setup-link:hover {
+  color: #4ee44e;
+  transition: color 0.3s, transform 0.3s; 
+}
+
+.setup-link{
+  color: #e0e0e0;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
 }

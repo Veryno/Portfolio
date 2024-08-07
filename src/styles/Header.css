@@ -25,14 +25,14 @@
 
 .header-title {
   color: #fff;
-  font-size: 6rem; /* Adjust font size for better fit */
+  font-size: 6rem; 
   margin: 0;
   font-weight: 700;
 }
 
 .header-subtitle {
   color: #fff;
-  font-size: 2.5rem; /* Adjusted for smaller layout */
+  font-size: 2.5rem; 
   margin-top: 0.5rem;
   font-weight: 400;
 }
@@ -42,21 +42,6 @@
   align-items: center;
 }
 
-@media (max-width: 768px) {
-  .header, .header-content {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .header-title {
-    font-size: 3rem; /* Adjusted for mobile */
-  }
-
-  .header-subtitle {
-    font-size: 1.2rem; /* Adjusted for mobile */
-  }
-}
 
 /* Comment out profile picture */
 /* .profile-picture {
@@ -68,3 +53,51 @@
   /* margin-left: 20px; */
   /* border: 2px solid #b0b0b0; */
 /*}*/
+
+@media (max-width: 768px) {
+  .header {
+    background-color: transparent;
+    border-bottom: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: sticky; 
+    top: 0; 
+    z-index: 1000; 
+  }
+  
+  .header-content {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header-title {
+    color: #fff;
+    font-size: 3.2rem; 
+    margin: 0;
+    font-weight: 700;
+  }
+  
+  .header-subtitle {
+    color: #fff;
+    font-size: 1.5rem; 
+    margin-top: 0.5rem;
+    font-weight: 400;
+  }
+  
+  .header-right {
+    display: flex;
+    align-items: center;
+  }
+}
