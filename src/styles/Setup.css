@@ -21,14 +21,13 @@
 
 .setup-category {
   font-size: 2rem;
-  font-weight: 700;
+  font-weight: 600;
   margin-bottom: 10px;
   color: #ffffff;
 }
 
 .setup-text {
   font-size: 1.8rem;
-  font-weight: 600;
   line-height: 1.6;
   color: #e0e0e0;
   margin: 0;

@@ -1,0 +1,87 @@
+/* Experience.css */
+.exp-grid {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    grid-gap: 10px;
+    font-size: 1rem;
+    padding: 20px;
+    border: 2px solid #090909;
+  }
+  
+  .exp-grid .exp__companyDescription {
+    color: #090909;
+  }
+  
+  .exp-grid .exp__responsibilities {
+    margin: 0.4em 0;
+    padding-left: 20px;
+  }
+  
+  .exp-grid .exp__responsibilities li {
+    padding: 0.3em 0;
+  }
+  
+  .exp-grid .exp__responsibilities span {
+    font-size: 1rem;
+    font-weight: bold;
+  }
+  
+  @media only screen and (max-width: 1200px) {
+    .exp-grid {
+      font-size: 1rem;
+      border: none;
+      border-top: 2px solid #090909;
+      border-bottom: 2px solid #090909;
+    }
+  }
+  
+  .exp-header-grid {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    grid-gap: 20px;
+    align-items: center;
+    font-size: 1rem;
+    padding: 15px;
+    border-bottom: 2px solid #090909;
+  }
+  
+  .exp-header-grid img {
+    width: 100%;
+    max-height: 80px;
+    object-fit: contain;
+    user-select: none;
+  }
+  
+  .exp-header-grid .exp__companyName {
+    text-transform: uppercase;
+    color: #2f2f3a;
+    font-size: 1.3rem;
+    letter-spacing: 0.5px;
+  }
+  
+  .exp-header-grid .exp__jobTitle {
+    display: block;
+    font-size: 1rem;
+    margin: 0.4em 0;
+    font-weight: bold;
+  }
+  
+  .exp-footer {
+    padding: 20px;
+    color: #fff;
+    border: none;
+    font-size: 1rem;
+    background: #090909;
+    margin: 0 0 0.5em 0;
+  }
+  
+  .exp-container {
+    padding: 1em;
+  }
+  
+  @media only screen and (max-width: 1200px) {
+    .exp-container {
+      padding: 1em 0;
+    }
+  }
+  
