@@ -51,7 +51,7 @@ const Setup = () => {
             Spotify <br />
             Discord<br />
             Zoom<br />
-            Google Calender<br />
+            Google Calendar<br />
           </p>
         </div>
       </div>
