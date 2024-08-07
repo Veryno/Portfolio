@@ -1,16 +1,13 @@
 /* Header.css */
 .header {
   background-color: transparent;
-  padding: 20px 0; /* Vertical padding only */
   border-bottom: 1px solid #444;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;  /* Full width within container */
-  max-width: 1000px; /* Align with container width */
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-  box-sizing: border-box;
-  padding-right: 1 rem;
 }
 
 .header-content {
@@ -27,15 +24,15 @@
 }
 
 .header-title {
-  color: #ffffff;
-  font-size: 5.5rem;
+  color: #fff;
+  font-size: 6rem; /* Adjust font size for better fit */
   margin: 0;
   font-weight: 700;
 }
 
 .header-subtitle {
-  color: #b0b0b0;
-  font-size: 2.25rem;
+  color: #fff;
+  font-size: 2.5rem; /* Adjusted for smaller layout */
   margin-top: 0.5rem;
   font-weight: 400;
 }
@@ -45,11 +42,29 @@
   align-items: center;
 }
 
-.profile-picture {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-left: 20px;
-  border: 2px solid #b0b0b0;
+@media (max-width: 768px) {
+  .header, .header-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .header-title {
+    font-size: 3rem; /* Adjusted for mobile */
+  }
+
+  .header-subtitle {
+    font-size: 1.2rem; /* Adjusted for mobile */
+  }
 }
+
+/* Comment out profile picture */
+/* .profile-picture {
+  /* Commented out for deployment */
+  /* width: 100px; */
+  /* height: 100px; */
+  /* border-radius: 50%; */
+  /* object-fit: cover; */
+  /* margin-left: 20px; */
+  /* border: 2px solid #b0b0b0; */
+/*}*/

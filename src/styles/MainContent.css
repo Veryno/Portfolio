@@ -1,16 +1,16 @@
 /* MainContent.css */
 .main-content {
-  padding: 20px 0; /* Vertical padding for consistency */
+  padding: 50px 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Align items to the left */
-  justify-content: flex-start;
+  align-items: flex-start;
   text-align: left;
-  color: #ffffff;
+  color: #fff;
   width: 100%;
-  max-width: 1000px; /* Ensure consistent container width */
-  margin: 0 auto; /* Center the main content horizontally */
+  max-width: 1200px; /* Adjusted max width */
+  margin: 0 auto;
   box-sizing: border-box;
+  
 }
 
 .intro-section {
@@ -19,14 +19,14 @@
 }
 
 .intro-text {
-  font-size: 2rem;
-  color: #e0e0e0;
-  font-weight: 300;
-  margin: 0;
+  font-size: 2rem; /* Smaller font for better layout */
+  color: #fff;
+  font-weight: 500;
+  margin: 1;
 }
 
 .resume-section {
-  margin-bottom: 5px;
+  margin-bottom: 0px;
   width: 100%;
 }
 
@@ -34,29 +34,30 @@
   color: #2ecc71;
   text-decoration: none;
   font-size: 2rem;
+  font-weight: 700;
   transition: color 0.3s;
-}
-
-.resume-link:hover {
-  color: #27ae60;
 }
 
 .content-section {
   display: flex;
   justify-content: space-between;
   width: 100%;
-  margin-top: 5px;
+  margin-top: 0px;
+
 }
 
 .tech-experience, .projects {
-  width: calc(50% - 10px); /* Split content evenly */
+  width: calc(50%);
+  background-color: transparent; /* Transparent boxes */
+
+  border-radius: 8px; /* Add slight rounding */
 }
 
 .section-title {
-  color: #ffffff;
-  font-size: 2.5rem;
-  font-weight: 600;
-  margin-bottom: 5px;
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 20px;
 }
 
 .tech-experience ul,
@@ -72,19 +73,28 @@
 }
 
 .experience-link, .project-link {
-  color: #e0e0e0;
+  color: #fff;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   transition: color 0.3s;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
 }
 
 .experience-link:hover, .project-link:hover {
   color: #2ecc71;
 }
 
-.link-icon {
-  margin-left: 5px;
-  font-size: 0.8rem;
+@media (max-width: 768px ) {
+  .main-content {
+    padding: 10px;
+  }
+  .content-section {
+    flex-direction: column; /* Stack elements vertically */
+    width: 100%;
+  }
+  .tech-experience, .projects {
+    width: 100%;
+    margin-bottom: 20px;
+  }
 }

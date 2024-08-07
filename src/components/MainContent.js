@@ -18,12 +18,12 @@ const MainContent = () => {
           rel="noopener noreferrer"
           download // Suggests the browser download the file
         >
-          Download Resume
+          DOWNLOAD RESUME
         </a>
       </div>
       <div className="content-section">
         <div className="tech-experience">
-          <h3 className="section-title">Technical Experience</h3>
+          <h3 className="section-title">TECHNICAL EXPERIENCE</h3>
           <ul>
             <li>
               <a href="https://www.truebird.com" target="_blank" rel="noopener noreferrer" className="experience-link">
@@ -39,7 +39,7 @@ const MainContent = () => {
           </ul>
         </div>
         <div className="projects">
-          <h3 className="section-title">Projects/Fellowships</h3>
+          <h3 className="section-title">PROJECTS/FELLOWSHIPS</h3>
           <ul>
             <li>
               <a href="https://github.com/Veryno/QuickNodeOAF" target="_blank" rel="noopener noreferrer" className="project-link">

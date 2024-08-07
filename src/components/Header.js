@@ -10,7 +10,7 @@ const Header = () => {
           <p className="header-subtitle">Software Engineer and Developer</p>
         </div>
         <div className="header-right">
-          <img src="/profile.heic" alt="Yaacob Abdullah" className="profile-picture" />
+       { /*  <img src="/profile.heic" alt="Yaacob Abdullah" className="profile-picture" />*/}
         </div>
       </div>
     </header>

@@ -1,35 +1,35 @@
 /* Setup.css */
 .setup-container {
-    width: 100%;
-    max-width: 1000px;
-    margin: 0 auto;
-    box-sizing: border-box;
-    overflow-y: auto;
-    background-color: transparent;
-    padding: 0px; /* Vertical padding only */
-  }
-  
-  .setup-content {
-    text-align: left;
-    color: #e0e0e0;
-    width: 100%;
-  }
-  
-  .setup-section {
-    margin-bottom: 20px;
-  }
-  
-  .setup-category {
-    font-size: 2rem;
-    font-weight: 600;
-    margin-bottom: 10px;
-    color: #ffffff;
-  }
-  
-  .setup-text {
-    font-size: 1.8rem;
-    line-height: 1.6;
-    color: #e0e0e0;
-    margin: 0;
-  }
-  
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background-color: transparent;
+  padding: 0px; /* Vertical padding only */
+}
+
+.setup-content {
+  text-align: left;
+  color: #e0e0e0;
+  width: 100%;
+}
+
+.setup-section {
+  margin-bottom: 20px;
+}
+
+.setup-category {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #ffffff;
+}
+
+.setup-text {
+  font-size: 1.8rem;
+  font-weight: 600;
+  line-height: 1.6;
+  color: #e0e0e0;
+  margin: 0;
+}

@@ -1,29 +1,24 @@
 /* Footer.css */
 .footer {
-  background-color: transparent; /* Transparent footer */
+  font: BlinkMacSystemFont;
+  background-color: transparent;
   padding: 20px 0;
   text-align: center;
   border-top: 1px solid #444;
   display: flex;
   justify-content: center;
-  width: 100%; /* Full width */
-  max-width: 1000px; /* Match content width */
+  width: 100%;
+  max-width: 1200px; /* Align with main content width */
   margin: 0 auto;
 }
 
 .footer-content {
   width: 100%;
-  max-width: 1000px; /* Match content width */
+  max-width: 1200px;
   display: flex;
-  justify-content: space-between; /* Space between left and right sections */
+  justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
-}
-
-.footer-left {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
 }
 
 .social-links {
@@ -34,25 +29,25 @@
 .social-link {
   color: #e0e0e0;
   transition: color 0.3s;
-  font-size: 2.5rem;
+  font-size: 2rem;
 }
 
 .social-link:hover {
   color: #2ecc71;
 }
 
-.footer-right {
-  text-align: right;
+@media (max-width: 768px) {
+  .footer {
+    flex-direction: column; /* Stack items vertically on small screens */
+    padding: 10px;
+  }
+  .footer-content {
+    flex-direction: column;
+    align-items: center;
+  }
 }
 
-.footer-setup-link {
+.footer-setup-link{
   color: #e0e0e0;
-  text-decoration: none;
-  font-size: 2rem;
-  transition: color 0.3s;
-  font-weight: 400;
-}
-
-.footer-setup-link:hover {
-  color: #2ecc71;
+  font-size: 1.5rem;
 }
