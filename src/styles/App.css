@@ -1,4 +1,4 @@
-
+/* App.css */
 * {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
@@ -47,7 +47,7 @@ body, html {
     min-height: 100vh; 
   }
   .app {
-    max-height: 2000px;
+    max-height: 4000px;
     padding: 20px; 
   }
 }
