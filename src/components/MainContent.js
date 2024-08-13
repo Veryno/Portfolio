@@ -43,7 +43,7 @@ const MainContent = () => {
           <ul>
             <li>
               <a href="https://github.com/Veryno/QuickNodeOAF" target="_blank" rel="noopener noreferrer" className="project-link">
-                Etherium smart contract <FaExternalLinkAlt className="link-icon" />
+                Ethereum smart contract <FaExternalLinkAlt className="link-icon" />
               </a>
             </li>
             <li>
