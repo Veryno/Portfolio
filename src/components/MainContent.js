@@ -1,6 +1,6 @@
 import React from 'react';
 import '../styles/MainContent.css';
-import { FaExternalLinkAlt } from 'react-icons/fa'; // Import link icon
+import { FaExternalLinkAlt } from 'react-icons/fa'; 
 
 const MainContent = () => {
   return (
@@ -12,11 +12,11 @@ const MainContent = () => {
       </div>
       <div className="resume-section">
         <a
-          href="/YAbdullahResume.pdf" // Path to your resume file
+          href="/Yaacob_Abdullah_Resume.pdf" 
           className="resume-link"
           target="_blank"
           rel="noopener noreferrer"
-          download // Suggests the browser download the file
+          download 
         >
           DOWNLOAD RESUME
         </a>
