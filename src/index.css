@@ -495,6 +495,12 @@
     }
   }
 
+  @media (width < 48rem) {
+    .mobile-items-start {
+      align-items: flex-start;
+    }
+  }
+
   @media (width >= 48rem) {
     .md\:h-6 {
       height: calc(var(--spacing) * 6);

@@ -3,8 +3,8 @@ import React from 'react';
 
 export function ProfileCard() {
   return (
-    <div className="glass-card w-screen h-screen md:w-[650px] md:h-[650px] pt-[70px] px-6 pb-6 md:p-10 relative z-10">
-      <div className="flex flex-col gap-3 md:gap-6 h-full overflow-y-auto">
+    <div className="glass-card w-screen md:w-[650px] md:h-[650px] pt-[70px] px-6 pb-6 md:p-10 relative z-10">
+      <div className="flex flex-col gap-3 md:gap-6 md:h-full md:overflow-y-auto">
         {/* Header Section */}
         <div className="flex flex-col gap-1 md:gap-2 flex-shrink-0">
           <h1 className="text-4xl md:text-7xl" style={{ color: '#d6d6d6' }}>Yaacob Abdullah</h1>
@@ -29,7 +29,7 @@ export function ProfileCard() {
         </a>
 
         {/* Two Column Section */}
-        <div className="flex gap-6 md:gap-10 flex-1 min-h-0">
+        <div className="flex gap-6 md:gap-10 md:flex-1 min-h-0">
           {/* Technical Experience */}
           <div className="flex-1 flex flex-col gap-2 md:gap-4">
             <h3 className="text-base md:text-xl tracking-wider" style={{ color: '#d6d6d6' }}>TECHNICAL EXPERIENCE</h3>
