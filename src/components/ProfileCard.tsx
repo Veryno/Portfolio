@@ -75,17 +75,6 @@ export function ProfileCard() {
             <h3 className="text-base md:text-xl tracking-wider" style={{ color: '#d6d6d6' }}>PROJECTS/FELLOWSHIPS</h3>
             <div className="flex flex-col gap-2 md:gap-3">
               <a
-                href="https://github.com/Veryno/QuickNodeOAF"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
-                style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
-              >
-                Ethereum smart contract
-              </a>
-              <a
                 href="https://github.com/Veryno/FirstAidAI"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -97,17 +86,6 @@ export function ProfileCard() {
                 FirstAidAI
               </a>
               <a
-                href="https://github.com/Veryno/Bedtime-Story-Generator"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
-                style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
-              >
-                Read Me a Story
-              </a>
-              <a
                 href="https://cunytechprep.org/"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -117,6 +95,28 @@ export function ProfileCard() {
                 onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
               >
                 Cuny Tech Prep
+              </a>
+              <a
+                href="https://github.com/Veryno/QuickNodeOAF"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
+                style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
+              >
+                Ethereum smart contract
+              </a>
+              <a
+                href="https://github.com/Veryno/Bedtime-Story-Generator"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
+                style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
+              >
+                Read Me a Story
               </a>
             </div>
           </div>
