@@ -1,11 +1,26 @@
+# Portfolio V2
 
-  # Liquid Glass Material Editor
+A modern portfolio website showcasing professional experience, projects, and contact information.
 
-  This is a code bundle for Liquid Glass Material Editor. The original project is available at https://www.figma.com/design/ydgfrUoTAYv00AZMndfZ9R/Liquid-Glass-Material-Editor.
+## Features
 
-  ## Running the code
+- **Responsive Design** - Optimized for both desktop and mobile devices
+- **Interactive Profile Card** - Showcases work experience, projects, and social links
+- **Resume Download** - Direct download link for resume PDF
+- **Modern Tech Stack** - Built with React, TypeScript, Vite, and Tailwind CSS
 
-  Run `npm i` to install the dependencies.
+## Tech Stack
 
-  Run `npm run dev` to start the development server.
-  
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Styling
+- **Radix UI** - Accessible component primitives
+- **Lucide React** - Icons
+
+- Node.js (v18 or higher)
+- npm or yarn
+
+## Attribution
+
+- UI components based on [shadcn/ui](https://ui.shadcn.com/) (MIT License)
