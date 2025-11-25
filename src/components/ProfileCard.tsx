@@ -15,7 +15,7 @@ export function ProfileCard() {
 
         {/* Bio Section */}
         <p className="leading-relaxed text-base md:text-xl flex-shrink-0" style={{ color: '#d6d6d6' }}>
-          Software Engineer with hands-on experience building full-stack apps and cool stuff. I care about clean architecture, fast execution, and solving real problems.
+          Software Engineer with hands-on experience building full-stack apps and applications I find interesting. I care about clean architecture, fast execution, and solving real problems.
         </p>
 
         {/* Download Resume Button */}
