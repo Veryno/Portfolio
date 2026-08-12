@@ -1,6 +1,8 @@
 import { Github, Linkedin } from 'lucide-react';
 import React from 'react';
 
+const PORTFOLIO_ACCENT = 'var(--portfolio-accent)';
+
 export function ProfileCard() {
   return (
     <div className="glass-card w-screen md:w-[650px] md:h-[650px] pt-[70px] px-6 pb-6 md:p-10 relative z-10">
@@ -23,7 +25,7 @@ export function ProfileCard() {
           href="/resume/Yaacob_Abdullah_Resume.pdf"
           download="Yaacob_Abdullah_Resume.pdf"
           className="hover:opacity-80 transition-opacity inline-flex items-center gap-2 w-fit text-base md:text-xl tracking-wide flex-shrink-0"
-          style={{ color: '#39FF14' }}
+          style={{ color: PORTFOLIO_ACCENT }}
         >
           DOWNLOAD RESUME
         </a>
@@ -35,12 +37,23 @@ export function ProfileCard() {
             <h3 className="text-base md:text-xl tracking-wider" style={{ color: '#d6d6d6' }}>TECHNICAL EXPERIENCE</h3>
             <div className="flex flex-col gap-2 md:gap-3">
               <a
+                href="https://builtbyvex.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
+                style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
+              >
+                Vex Technologies
+              </a>
+              <a
                 href="https://www.truebird.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
                 style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+                onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
               >
                 Truebird Technologies
@@ -51,7 +64,7 @@ export function ProfileCard() {
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
                 style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+                onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
               >
                 Reem Construction
@@ -62,7 +75,7 @@ export function ProfileCard() {
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
                 style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+                onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
               >
                 Open Avenues
@@ -80,7 +93,7 @@ export function ProfileCard() {
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
                 style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+                onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
               >
                 FirstAidAI
@@ -91,7 +104,7 @@ export function ProfileCard() {
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
                 style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+                onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
               >
                 Cuny Tech Prep
@@ -102,7 +115,7 @@ export function ProfileCard() {
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
                 style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+                onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
               >
                 Ethereum smart contract
@@ -113,7 +126,7 @@ export function ProfileCard() {
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
                 style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+                onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
               >
                 Read Me a Story
@@ -131,7 +144,7 @@ export function ProfileCard() {
               rel="noopener noreferrer"
               className="transition-colors"
               style={{ color: '#d6d6d6' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+              onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
               onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
               aria-label="GitHub"
             >
@@ -143,7 +156,7 @@ export function ProfileCard() {
               rel="noopener noreferrer"
               className="transition-colors"
               style={{ color: '#d6d6d6' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+              onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
               onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
               aria-label="LinkedIn"
             >
@@ -154,7 +167,7 @@ export function ProfileCard() {
             href="mailto:yaacobabdullahh@gmail.com"
             className="hover:opacity-80 transition-opacity text-base md:text-xl underline"
             style={{ color: '#d6d6d6', textDecorationColor: 'rgba(214, 214, 214, 0.2)' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#39FF14'}
+            onMouseEnter={(e) => e.currentTarget.style.color = PORTFOLIO_ACCENT}
             onMouseLeave={(e) => e.currentTarget.style.color = '#d6d6d6'}
           >
             yaacobabdullahh@gmail.com
