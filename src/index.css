@@ -635,9 +635,9 @@
   --sidebar-accent-foreground: oklch(.205 0 0);
   --sidebar-border: oklch(.922 0 0);
   --sidebar-ring: oklch(.708 0 0);
-  --bg-dark: #111213;
+  --bg-dark: #1B1E20;
   --fg-light: #d6d6d6;
-  --matrix-green: #39ff14;
+  --portfolio-accent: #FFD400;
 }
 
 .dark {
