@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@300..900&display=swap");
 /*! tailwindcss v4.1.3 | MIT License | https://tailwindcss.com */
 @layer properties {
   @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
@@ -691,7 +691,91 @@ html {
   inherits: false
 }
 
+/* Header/footer copies that sit outside the sky box on phones only */
+.profile-mobile-only {
+  display: none;
+}
+
+/* Animated pixel-sky panel behind the profile text */
+.profile-card {
+  --portfolio-accent: #0b3d91;
+  isolation: isolate;
+  font-weight: 800;
+}
+
+.profile-card :is(h1, h2, h3, p, a) {
+  font-weight: 800;
+}
+
+.profile-card .profile-name {
+  font-weight: 900;
+}
+
+@media (width >= 48rem) {
+  /* Keep the sky panel a perfect square and spread any spare height evenly
+     between the sections instead of leaving it at the bottom. */
+  .profile-card {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .profile-card .profile-content {
+    flex: 1;
+    gap: 1rem;
+    justify-content: space-between;
+  }
+
+  .profile-card .portfolio-details {
+    flex: none;
+  }
+
+  .profile-card .profile-bio {
+    font-size: 1.4rem;
+    line-height: 1.4;
+  }
+
+  .profile-card .profile-resume {
+    font-size: 1.4rem;
+  }
+
+  .profile-card .portfolio-section {
+    gap: .6rem;
+  }
+
+  .profile-card .portfolio-link-list {
+    gap: .4rem;
+  }
+}
+
+.profile-sky {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* Dot clouds live on a larger layer so they can drift past the box edges */
+.profile-clouds {
+  position: absolute;
+  top: calc(var(--spill-y) * -1);
+  left: calc(var(--spill-x) * -1);
+  z-index: -1;
+  width: calc(100% + var(--spill-x) * 2);
+  height: calc(100% + var(--spill-y) * 2);
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.portfolio-shell {
+  overflow: hidden;
+}
+
 @media (width < 48rem) {
+  /* Mobile only: everything in here is scoped below 768px so the desktop
+     layout is never affected. */
   html,
   body,
   #root {
@@ -711,17 +795,48 @@ html {
     min-height: 100dvh;
   }
 
+  /* Inset the sky box so the dot clouds have dark margin to spill into.
+     Spill sizes stay multiples of 6px so dots line up with the sky pixels. */
   .portfolio-shell {
     width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 22px;
+    padding-top: calc(18px + env(safe-area-inset-top));
+    padding-right: max(18px, env(safe-area-inset-right));
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+    padding-left: max(18px, env(safe-area-inset-left));
+  }
+
+  .profile-clouds {
+    top: -18px;
+    left: -18px;
+    width: calc(100% + 36px);
+    height: calc(100% + 36px);
   }
 
   .profile-card {
     width: 100%;
     min-width: 0;
-    padding-top: calc(24px + env(safe-area-inset-top));
-    padding-right: max(20px, env(safe-area-inset-right));
-    padding-bottom: calc(32px + env(safe-area-inset-bottom));
-    padding-left: max(20px, env(safe-area-inset-left));
+    padding: 24px 20px;
+  }
+
+  /* Header and footer move out of the box onto the dark page, in white. */
+  .profile-box-only {
+    display: none;
+  }
+
+  .profile-mobile-only {
+    display: flex;
+  }
+
+  .profile-mobile-only.profile-header {
+    padding-inline: 2px;
+  }
+
+  .profile-mobile-only.portfolio-footer {
+    margin-top: 0;
   }
 
   .profile-content {
@@ -733,43 +848,48 @@ html {
   }
 
   .profile-name {
-    max-width: 100%;
-    font-size: clamp(1.9rem, 8.5vw, 2.25rem);
+    font-size: clamp(2rem, 10vw, 2.5rem);
     line-height: 1;
-    letter-spacing: -.03em;
-    text-wrap: balance;
+    letter-spacing: -.02em;
   }
 
   .profile-role {
-    font-size: 17px;
+    font-size: 15px;
     line-height: 1.3;
   }
 
   .profile-divider {
-    margin-block: 20px;
+    display: none;
   }
 
   .profile-bio {
-    max-width: 42ch;
     font-size: 16px;
-    line-height: 1.55;
+    line-height: 1.45;
   }
 
+  /* Plain text call to action with a download arrow. */
   .profile-resume {
-    justify-content: center;
-    width: 100%;
-    min-height: 50px;
-    margin-top: 20px;
-    margin-bottom: 32px;
-    padding: 12px 16px;
-    border: 1px solid var(--portfolio-accent);
+    align-self: flex-start;
+    gap: 8px;
+    margin-top: 18px;
+    padding-block: 4px;
+    color: #000 !important;
+    font-size: 16px;
+    letter-spacing: .08em;
     text-decoration: none;
+  }
+
+  .profile-resume::after {
+    content: "\2193";
+    font-size: 17px;
+    line-height: 1;
   }
 
   .portfolio-details {
     min-width: 0;
     flex-direction: column;
-    gap: 0;
+    gap: 22px;
+    margin-top: 26px;
   }
 
   .portfolio-section {
@@ -777,17 +897,14 @@ html {
     gap: 0;
   }
 
-  .portfolio-section + .portfolio-section {
-    margin-top: 28px;
-    padding-top: 28px;
-    border-top: 1px solid rgba(214, 214, 214, .2);
-  }
-
   .portfolio-section-title {
+    align-self: flex-start;
     margin-bottom: 8px;
-    font-size: 13px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #000;
+    font-size: 12px;
     line-height: 1.25;
-    letter-spacing: .1em;
+    letter-spacing: .12em;
   }
 
   .portfolio-link-list {
@@ -795,64 +912,60 @@ html {
   }
 
   .portfolio-link {
-    display: flex;
-    min-height: 44px;
-    align-items: center;
-    padding-block: 8px;
-    border-bottom: 1px solid rgba(214, 214, 214, .12);
+    display: block;
+    padding-block: 6px;
     font-size: 16px;
-    line-height: 1.35;
-    text-decoration: none !important;
+    line-height: 1.3;
     overflow-wrap: anywhere;
-    -webkit-tap-highlight-color: rgba(255, 212, 0, .15);
+    -webkit-tap-highlight-color: rgba(11, 61, 145, .15);
   }
 
   .portfolio-footer {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 16px;
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid rgba(214, 214, 214, .2);
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 26px;
+    padding-top: 0;
   }
 
   .portfolio-socials {
-    gap: 8px;
+    gap: 4px;
+    margin-left: -10px;
   }
 
   .portfolio-social-link {
     display: flex;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(214, 214, 214, .2);
-    -webkit-tap-highlight-color: rgba(255, 212, 0, .15);
+    -webkit-tap-highlight-color: rgba(11, 61, 145, .15);
   }
 
   .portfolio-email {
-    display: flex;
-    width: 100%;
-    min-height: 44px;
-    align-items: center;
-    font-size: 16px;
-    line-height: 1.35;
+    min-width: 0;
+    font-size: 14px;
+    line-height: 1.3;
     overflow-wrap: anywhere;
-    -webkit-tap-highlight-color: rgba(255, 212, 0, .15);
+    text-align: right;
+    -webkit-tap-highlight-color: rgba(11, 61, 145, .15);
   }
 
   .profile-resume:focus-visible,
   .portfolio-link:focus-visible,
   .portfolio-social-link:focus-visible,
   .portfolio-email:focus-visible {
-    outline: 2px solid var(--portfolio-accent);
+    outline: 2px solid #000;
     outline-offset: 3px;
   }
 
+  .profile-mobile-only a:focus-visible {
+    outline-color: #fff;
+  }
+
   .profile-resume:active {
-    background-color: var(--portfolio-accent);
-    color: var(--bg-dark) !important;
+    color: var(--portfolio-accent) !important;
   }
 
   .portfolio-link:active,
