@@ -1,5 +1,5 @@
 import { Github, Linkedin } from 'lucide-react';
-import React from 'react';
+import React, { useRef } from 'react';
 import { PixelSky } from './PixelSky';
 
 const PORTFOLIO_ACCENT = 'var(--portfolio-accent)';
@@ -103,14 +103,15 @@ function LinkSection({ title, links }: { title: string; links: { label: string; 
 }
 
 export function ProfileCard() {
+  const contentRef = useRef<HTMLDivElement>(null);
+
   return (
     <>
       {/* Phone-only copy; hidden on desktop where the header lives in the box. */}
       <ProfileHeader className="profile-mobile-only" color={MOBILE_TEXT_COLOR} />
 
       <div className="profile-card glass-card w-screen md:w-[650px] pt-[70px] px-6 pb-6 md:p-10 relative z-10">
-        <PixelSky className="profile-sky" />
-        <div className="profile-content flex flex-col gap-3 md:gap-6">
+        <div ref={contentRef} className="profile-content flex flex-col gap-3 md:gap-6">
           <ProfileHeader className="profile-box-only flex-shrink-0" color={TEXT_COLOR} />
 
           <div className="profile-divider h-px flex-shrink-0" style={{ backgroundColor: RULE_COLOR }}></div>
@@ -135,6 +136,8 @@ export function ProfileCard() {
 
           <ProfileFooter className="profile-box-only pt-2 md:pt-3 flex-shrink-0" color={TEXT_COLOR} />
         </div>
+        {/* Rendered after the content so its ref is attached when the sky sets up the text mask. */}
+        <PixelSky className="profile-sky" revealTarget={contentRef} />
       </div>
 
       {/* Phone-only copy; hidden on desktop where the footer lives in the box. */}

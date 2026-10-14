@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 
 // Size of one rendered "pixel" in CSS px. Both layers are drawn at low
 // resolution and scaled up with nearest-neighbour sampling for the crunchy look.
@@ -22,6 +22,10 @@ const PALETTE: [number, number, number][] = [
   [218, 228, 236],
 ];
 const SHADOW: [number, number, number] = [20, 22, 26];
+// Width of the dark fringe at the wipe front; content only shows behind it.
+const FRINGE = 0.09;
+// Past this the wipe has crossed every block, so the text mask can come off.
+const REVEAL_DONE = 1.6;
 
 // 4x4 ordered-dither matrix, normalised to [0, 1).
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
@@ -123,11 +127,23 @@ function cloudDepth(cloud: DotCloud, dx: number, up: number) {
   return depth;
 }
 
-export function PixelSky({ className }: { className?: string }) {
+// Ragged, stair-stepped reveal front sweeping from the top-left.
+function revealFront(bx: number, by: number, blockCols: number, blockRows: number) {
+  return (bx / blockCols) * 0.75 + (by / blockRows) * 0.55 + hash(by, 99) * 0.12;
+}
+
+type PixelSkyProps = {
+  className?: string;
+  // Element whose contents should appear only where the sky has been revealed.
+  revealTarget?: React.RefObject<HTMLElement | null>;
+};
+
+export function PixelSky({ className, revealTarget }: PixelSkyProps) {
   const skyRef = useRef<HTMLCanvasElement>(null);
   const cloudRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
+  // Layout effect so the text is masked before the first paint.
+  useLayoutEffect(() => {
     const sky = skyRef.current;
     const cloudCanvas = cloudRef.current;
     const skyCtx = sky?.getContext('2d');
@@ -146,6 +162,8 @@ export function PixelSky({ className }: { className?: string }) {
     let clouds: DotCloud[] = [];
     let frame = 0;
     const start = performance.now();
+    const target = reduceMotion ? null : revealTarget?.current ?? null;
+    let masking = !!target;
 
     const resize = () => {
       const rect = sky.getBoundingClientRect();
@@ -172,11 +190,8 @@ export function PixelSky({ className }: { className?: string }) {
       const blockRows = Math.ceil(rows / BLOCK);
 
       for (let by = 0; by < blockRows; by++) {
-        // Ragged, stair-stepped reveal front sweeping from the top-left.
-        const rowJitter = hash(by, 99) * 0.12;
         for (let bx = 0; bx < blockCols; bx++) {
-          const front = (bx / blockCols) * 0.75 + (by / blockRows) * 0.55 + rowJitter;
-          const edge = reveal - front;
+          const edge = reveal - revealFront(bx, by, blockCols, blockRows);
           const value = skyField(bx, by, t);
           const level = value * (PALETTE.length - 1);
           const lo = Math.floor(level);
@@ -195,7 +210,7 @@ export function PixelSky({ className }: { className?: string }) {
               let color: [number, number, number] | null;
               if (edge < 0) {
                 color = null;
-              } else if (edge < 0.09) {
+              } else if (edge < FRINGE) {
                 // Dark checkered fringe right at the wipe front.
                 color = threshold < (edge < 0.045 ? 0.35 : 0.65) ? SHADOW : null;
               } else {
@@ -256,11 +271,45 @@ export function PixelSky({ className }: { className?: string }) {
       cloudCtx.putImageData(cloudImage, 0, 0);
     };
 
+    const clearMask = () => {
+      target?.style.removeProperty('clip-path');
+    };
+
+    // Clip the text to the revealed area of the sky so it appears with the wipe.
+    // The front only moves left to right within a row, so the revealed area is a
+    // staircase hugging the left edge and fits in a single polygon.
+    const drawMask = (reveal: number) => {
+      if (!masking || !target) return;
+      if (reveal > REVEAL_DONE) {
+        masking = false;
+        clearMask();
+        return;
+      }
+      const blockCols = Math.ceil(cols / BLOCK);
+      const blockRows = Math.ceil(rows / BLOCK);
+      const blockSize = BLOCK * PIXEL;
+      const box = sky.getBoundingClientRect();
+      const own = target.getBoundingClientRect();
+      const ox = box.left - own.left;
+      const oy = box.top - own.top;
+      const points = [`${ox}px ${oy}px`];
+      for (let by = 0; by < blockRows; by++) {
+        let shown = 0;
+        while (shown < blockCols && reveal - revealFront(shown, by, blockCols, blockRows) >= FRINGE) shown++;
+        const x = ox + Math.min(shown * blockSize, box.width);
+        const y = oy + by * blockSize;
+        points.push(`${x}px ${y}px`, `${x}px ${Math.min(y + blockSize, oy + box.height)}px`);
+      }
+      points.push(`${ox}px ${oy + box.height}px`);
+      target.style.clipPath = `polygon(${points.join(', ')})`;
+    };
+
     const draw = (now: number) => {
       const t = reduceMotion ? 40 : (now - start) / 1000;
       const reveal = reduceMotion ? 3 : Math.min(3, (t / REVEAL_SECONDS) * 1.5);
       drawSky(t, reveal);
       drawClouds(t, reveal);
+      drawMask(reveal);
       if (!reduceMotion) frame = requestAnimationFrame(draw);
     };
 
@@ -271,13 +320,15 @@ export function PixelSky({ className }: { className?: string }) {
     observer.observe(sky);
     observer.observe(cloudCanvas);
     resize();
+    drawMask(0);
     frame = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+      clearMask();
     };
-  }, []);
+  }, [revealTarget]);
 
   return (
     <>
