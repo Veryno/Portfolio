@@ -803,6 +803,13 @@ html {
     color-scheme: dark;
   }
 
+  /* One "design pixel". Phone sizes below are written as multiples of it, so
+     portrait phones can scale the whole layout to fit (see the block after this
+     one); elsewhere it is a plain pixel. */
+  :root {
+    --dp: 1px;
+  }
+
   body,
   #root,
   .portfolio-shell {
@@ -818,7 +825,7 @@ html {
     flex-direction: column;
     align-items: stretch;
     justify-content: center;
-    gap: 22px;
+    gap: calc(22 * var(--dp));
     padding-top: calc(18px + env(safe-area-inset-top));
     padding-right: max(18px, env(safe-area-inset-right));
     padding-bottom: calc(18px + env(safe-area-inset-bottom));
@@ -835,7 +842,7 @@ html {
   .profile-card {
     width: 100%;
     min-width: 0;
-    padding: 24px 20px;
+    padding: calc(24 * var(--dp)) calc(20 * var(--dp));
   }
 
   /* Header and footer move out of the box onto the dark page, in white. */
@@ -860,17 +867,17 @@ html {
   }
 
   .profile-header {
-    gap: 6px;
+    gap: calc(6 * var(--dp));
   }
 
   .profile-name {
-    font-size: clamp(2rem, 10vw, 2.5rem);
+    font-size: calc(35 * var(--dp));
     line-height: 1;
     letter-spacing: -.02em;
   }
 
   .profile-role {
-    font-size: 15px;
+    font-size: calc(15 * var(--dp));
     line-height: 1.3;
   }
 
@@ -879,18 +886,18 @@ html {
   }
 
   .profile-bio {
-    font-size: 16px;
+    font-size: calc(16 * var(--dp));
     line-height: 1.45;
   }
 
   /* Plain text call to action with an arrow. */
   .profile-resume {
     align-self: flex-start;
-    gap: 8px;
-    margin-top: 18px;
-    padding-block: 4px;
+    gap: calc(8 * var(--dp));
+    margin-top: calc(18 * var(--dp));
+    padding-block: calc(4 * var(--dp));
     color: var(--sky-ink) !important;
-    font-size: 17px;
+    font-size: calc(17 * var(--dp));
     letter-spacing: .08em;
     text-decoration: none;
   }
@@ -898,8 +905,8 @@ html {
   .portfolio-details {
     min-width: 0;
     flex-direction: column;
-    gap: 22px;
-    margin-top: 26px;
+    gap: calc(22 * var(--dp));
+    margin-top: calc(26 * var(--dp));
   }
 
   .portfolio-section {
@@ -909,10 +916,10 @@ html {
 
   .portfolio-section-title {
     align-self: flex-start;
-    margin-bottom: 8px;
-    padding-bottom: 4px;
+    margin-bottom: calc(8 * var(--dp));
+    padding-bottom: calc(4 * var(--dp));
     border-bottom: 2px solid var(--sky-ink);
-    font-size: 12px;
+    font-size: calc(12 * var(--dp));
     line-height: 1.25;
     letter-spacing: .12em;
   }
@@ -923,8 +930,8 @@ html {
 
   .portfolio-link {
     display: block;
-    padding-block: 6px;
-    font-size: 16px;
+    padding-block: calc(6 * var(--dp));
+    font-size: calc(16 * var(--dp));
     line-height: 1.3;
     overflow-wrap: anywhere;
     -webkit-tap-highlight-color: rgba(11, 61, 145, .15);
@@ -934,28 +941,33 @@ html {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 26px;
+    gap: calc(12 * var(--dp));
+    margin-top: calc(26 * var(--dp));
     padding-top: 0;
   }
 
   .portfolio-socials {
-    gap: 4px;
-    margin-left: -10px;
+    gap: calc(4 * var(--dp));
+    margin-left: calc(-10 * var(--dp));
   }
 
   .portfolio-social-link {
     display: flex;
-    width: 40px;
-    height: 40px;
+    width: calc(40 * var(--dp));
+    height: calc(40 * var(--dp));
     align-items: center;
     justify-content: center;
     -webkit-tap-highlight-color: rgba(11, 61, 145, .15);
   }
 
+  .portfolio-social-link svg {
+    width: calc(17.5 * var(--dp));
+    height: calc(17.5 * var(--dp));
+  }
+
   .portfolio-email {
     min-width: 0;
-    font-size: 14px;
+    font-size: calc(14 * var(--dp));
     line-height: 1.3;
     overflow-wrap: anywhere;
     text-align: right;
@@ -982,5 +994,41 @@ html {
   .portfolio-social-link:active,
   .portfolio-email:active {
     color: var(--portfolio-accent) !important;
+  }
+}
+
+/* Portrait phones: the layout above is designed at 393 x 764 CSS px (the
+   screen in an iPhone 15) and scales as a whole to fit the visible screen, so
+   every phone gets the same look and the page never scrolls. 357 x 728 is that
+   design minus the fixed 18px page margins; the safe areas cover the notch and
+   home bar. */
+@media (width < 48rem) and (orientation: portrait) {
+  :root {
+    --screen-h: 100vh;
+    --dp: clamp(0.6px, min((100vw - 36px) / 357, (var(--screen-h) - 36px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 728), 1.15px);
+  }
+
+  @supports (height: 100dvh) {
+    :root {
+      --screen-h: 100dvh;
+    }
+  }
+
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body,
+  #root,
+  .portfolio-shell {
+    height: var(--screen-h);
+    min-height: 0;
+  }
+
+  .portfolio-shell {
+    overflow: hidden;
   }
 }
