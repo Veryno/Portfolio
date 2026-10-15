@@ -1,64 +1,41 @@
 import React, { useLayoutEffect, useRef } from 'react';
+import { drawEvents, planCycle } from './sky/events';
+import { mixPhase, skyLuminance, type SkyMix } from './sky/phases';
+import { BLOCK, PIXEL, SKY_SPEED, STAR, STAR_DIM, bayer, hash, lerp3, put, skyField, type RGB } from './sky/pixel';
 
-// Size of one rendered "pixel" in CSS px. Both layers are drawn at low
-// resolution and scaled up with nearest-neighbour sampling for the crunchy look.
-const PIXEL = 3;
-// Colour blocks are BLOCK x BLOCK pixels; dithering happens inside each block.
-const BLOCK = 5;
 const REVEAL_SECONDS = 2.4;
+// One full loop of the background: day, sunset, night, sunrise and back to day.
+const CYCLE_SECONDS = 180;
 // How far (in CSS px) the dot clouds may drift outside the box. Keep these
 // multiples of PIXEL * 2 so the dot lattice lines up with the sky pixels.
 const SPILL_X = 96;
 const SPILL_Y = 48;
-// Sky drift speed in sky pixels per second (left to right, against the dot clouds).
-const SKY_SPEED = 9;
+// Overall pace of the dot clouds' drift.
+const CLOUD_SPEED = 0.8;
 
-// Deep blue -> pale sky, sampled from the reference animation.
-const PALETTE: [number, number, number][] = [
-  [70, 134, 208],
-  [98, 156, 218],
-  [140, 182, 226],
-  [186, 210, 230],
-  [218, 228, 236],
-];
-const SHADOW: [number, number, number] = [20, 22, 26];
+const SHADOW: RGB = [20, 22, 26];
 // Width of the dark fringe at the wipe front; content only shows behind it.
 const FRINGE = 0.09;
 // Past this the wipe has crossed every block, so the text mask can come off.
 const REVEAL_DONE = 1.6;
+// Text on the sky turns white once the sky's average luminance drops below the
+// first value and black again above the second (black and white read about
+// equally well near 0.18; the gap stops it flickering at the crossover).
+const INK_LIGHT_BELOW = 0.19;
+const INK_DARK_ABOVE = 0.21;
+// A text colour change sweeps across the box over this long, top-left first
+// like the reveal, turning one piece of text at a time in reading order.
+const INK_SWEEP_SECONDS = 3;
+// The pieces of text that turn individually (each fades briefly; see index.css).
+const INK_UNITS = 'h1, h3, p, a, .profile-divider';
 
-// 4x4 ordered-dither matrix, normalised to [0, 1).
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
-
-function hash(x: number, y: number) {
-  let h = (x * 374761393 + y * 668265263) | 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-}
-
-function valueNoise(x: number, y: number) {
-  const xi = Math.floor(x);
-  const yi = Math.floor(y);
-  const xf = x - xi;
-  const yf = y - yi;
-  const u = xf * xf * (3 - 2 * xf);
-  const v = yf * yf * (3 - 2 * yf);
-  const a = hash(xi, yi);
-  const b = hash(xi + 1, yi);
-  const c = hash(xi, yi + 1);
-  const d = hash(xi + 1, yi + 1);
-  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-}
-
-function skyField(x: number, y: number, t: number) {
-  // Wide horizontal bands of cloud drifting left to right.
-  const sx = (x - t * SKY_SPEED / BLOCK) * 0.075;
-  const sy = y * 0.13;
-  let n = valueNoise(sx, sy) * 0.6;
-  n += valueNoise(sx * 2.2 + 17, sy * 2.2 - t * 0.03) * 0.28;
-  n += valueNoise(sx * 5 - 5, sy * 5 + 9) * 0.12;
-  // Stretch contrast so there are bold deep-blue rivers and bright cloud banks.
-  return Math.min(1, Math.max(0, (n - 0.28) / 0.44));
+// A twinkling star at sky pixel (x, y), or null. Keyed to the drifting sky so
+// stars travel with it; more of them come out as amount rises toward full night.
+function starAt(x: number, y: number, t: number, amount: number): RGB | null {
+  if (hash(x * 7 + 3, y * 13 + 5) >= 0.006) return null;
+  const twinkle = 0.5 + 0.5 * Math.sin(t * (1.2 + hash(x, y + 77) * 2.5) + hash(x + 9, y) * Math.PI * 2);
+  if (amount * (0.35 + 0.65 * twinkle) <= hash(x + 31, y + 41) * 0.5 + 0.35) return null;
+  return twinkle > 0.6 ? STAR : STAR_DIM;
 }
 
 type DotCloud = {
@@ -105,7 +82,7 @@ function makeClouds(cols: number, rows: number, seed: number): DotCloud[] {
       y: rows * (0.06 + 0.92 * hash(i, seed + 2)),
       w,
       h: Math.max(...lobes.map(([, r]) => r * 1.5)),
-      speed: fast ? 14 + hash(i, seed + 5) * 12 : 1.5 + hash(i, seed + 5) * 9,
+      speed: (fast ? 14 + hash(i, seed + 5) * 12 : 1.5 + hash(i, seed + 5) * 9) * CLOUD_SPEED,
       bobAmp: 1 + hash(i, seed + 13) * 6,
       bobRate: 0.15 + hash(i, seed + 14) * 0.5,
       bobPhase: hash(i, seed + 15) * Math.PI * 2,
@@ -134,10 +111,14 @@ function revealFront(bx: number, by: number, blockCols: number, blockRows: numbe
 
 type PixelSkyProps = {
   className?: string;
-  // Element whose contents should appear only where the sky has been revealed.
+  // Element holding the text on the sky: it appears only where the sky has been
+  // revealed, and its text changes colour as the sky darkens and brightens.
   revealTarget?: React.RefObject<HTMLElement | null>;
 };
 
+// The sky cycles through a day every three minutes, with the occasional sun,
+// moon, shooting star or ISS pass. While the sky is dark it marks its parent box
+// data-sky-ink="light" so the text on it switches to white.
 export function PixelSky({ className, revealTarget }: PixelSkyProps) {
   const skyRef = useRef<HTMLCanvasElement>(null);
   const cloudRef = useRef<HTMLCanvasElement>(null);
@@ -162,8 +143,16 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
     let clouds: DotCloud[] = [];
     let frame = 0;
     const start = performance.now();
-    const target = reduceMotion ? null : revealTarget?.current ?? null;
+    const content = revealTarget?.current ?? null;
+    const target = reduceMotion ? null : content;
     let masking = !!target;
+    // Each visit gets its own run of events; the loop always opens on the daytime sky.
+    const seed = Math.floor(Math.random() * 10000);
+    let cycle = 0;
+    let plan = planCycle(seed);
+    const box = sky.parentElement;
+    let inkLight = false;
+    let inkSweep: { light: boolean; start: number; units: { el: HTMLElement; at: number }[] } | null = null;
 
     const resize = () => {
       const rect = sky.getBoundingClientRect();
@@ -183,21 +172,28 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
       clouds = makeClouds(cloudCols, cloudRows, 11);
     };
 
-    const drawSky = (t: number, reveal: number) => {
+    const drawSky = (t: number, reveal: number, mix: SkyMix) => {
       if (!skyImage) return;
       const data = skyImage.data;
       const blockCols = Math.ceil(cols / BLOCK);
       const blockRows = Math.ceil(rows / BLOCK);
+      const levels = mix.top.length;
+      const shift = Math.floor(t * SKY_SPEED);
 
       for (let by = 0; by < blockRows; by++) {
+        // This row's palette: the phase's top colours fading into its horizon colours.
+        const gy = blockRows > 1 ? by / (blockRows - 1) : 0;
+        const palette = mix.top.map((c, l) => lerp3(c, mix.bottom[l], gy).map(Math.round) as RGB);
         for (let bx = 0; bx < blockCols; bx++) {
           const edge = reveal - revealFront(bx, by, blockCols, blockRows);
           const value = skyField(bx, by, t);
-          const level = value * (PALETTE.length - 1);
+          const level = value * (levels - 1);
           const lo = Math.floor(level);
           // Snap most blocks to a solid colour and only dither the in-between ones.
           const raw = level - lo;
           const frac = raw < 0.3 ? 0 : raw > 0.7 ? 1 : (raw - 0.3) / 0.4;
+          // Stars only show through the darker, clear patches of sky.
+          const starry = mix.stars > 0 && value < 0.42;
 
           for (let py = 0; py < BLOCK; py++) {
             const y = by * BLOCK + py;
@@ -206,20 +202,19 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
               const x = bx * BLOCK + px;
               if (x >= cols) break;
               const i = (y * cols + x) * 4;
-              const threshold = BAYER[(y & 3) * 4 + (x & 3)];
-              let color: [number, number, number] | null;
+              const threshold = bayer(x, y);
+              let color: RGB | null;
               if (edge < 0) {
                 color = null;
               } else if (edge < FRINGE) {
                 // Dark checkered fringe right at the wipe front.
                 color = threshold < (edge < 0.045 ? 0.35 : 0.65) ? SHADOW : null;
               } else {
-                color = PALETTE[Math.min(PALETTE.length - 1, frac > threshold ? lo + 1 : lo)];
+                color = palette[Math.min(levels - 1, frac > threshold ? lo + 1 : lo)];
+                if (starry) color = starAt(x - shift, y, t, mix.stars) ?? color;
               }
               if (color) {
-                data[i] = color[0];
-                data[i + 1] = color[1];
-                data[i + 2] = color[2];
+                put(data, i, color);
                 data[i + 3] = 255;
               } else {
                 data[i + 3] = 0;
@@ -228,15 +223,17 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
           }
         }
       }
-      skyCtx.putImageData(skyImage, 0, 0);
     };
 
-    const drawClouds = (t: number, reveal: number) => {
+    // The dot clouds take on a little of the sky's colour: warm at sunrise and
+    // sunset, moonlit blue at night.
+    const drawClouds = (t: number, reveal: number, tint: RGB) => {
       if (!cloudImage) return;
       const data = cloudImage.data;
       data.fill(0);
       const appear = Math.min(1, Math.max(0, reveal - 0.4) * 1.5);
       if (appear === 0) return;
+      const [r, g, b] = tint.map(Math.round);
 
       for (let ci = 0; ci < clouds.length; ci++) {
         const cloud = clouds[ci];
@@ -261,9 +258,9 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
             const sy = y - spillY;
             const inside = sx >= 0 && sy >= 0 && sx < cols && sy < rows;
             const i = (y * cloudCols + x) * 4;
-            data[i] = 255;
-            data[i + 1] = 255;
-            data[i + 2] = 255;
+            data[i] = r;
+            data[i + 1] = g;
+            data[i + 2] = b;
             data[i + 3] = inside ? 255 : 200;
           }
         }
@@ -273,6 +270,38 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
 
     const clearMask = () => {
       target?.style.removeProperty('clip-path');
+    };
+
+    // When the sky crosses between light and dark, sweep the new text colour across
+    // the box: each piece of text takes it as the front passes, then the box takes
+    // over the colour once they all have.
+    const updateInk = (mix: SkyMix, t: number) => {
+      const lum = skyLuminance(mix);
+      const light = lum < INK_LIGHT_BELOW ? true : lum > INK_DARK_ABOVE ? false : inkLight;
+      if (light !== inkLight) {
+        inkLight = light;
+        const area = sky.getBoundingClientRect();
+        const units = Array.from(content?.querySelectorAll<HTMLElement>(INK_UNITS) ?? [], (el) => {
+          // Timed from the element's top-left corner, so text turns as the front reaches it.
+          const r = el.getBoundingClientRect();
+          const fx = (r.left - area.left) / area.width;
+          const fy = (r.top - area.top) / area.height;
+          return { el, at: Math.min(1, Math.max(0, (fx * 0.75 + fy * 0.55) / 1.3)) * INK_SWEEP_SECONDS };
+        });
+        inkSweep = { light, start: t, units };
+      }
+      if (!inkSweep) return;
+      const color = inkSweep.light ? '#fff' : '#000';
+      let pending = false;
+      for (const unit of inkSweep.units) {
+        if (t - inkSweep.start >= unit.at) unit.el.style.setProperty('--sky-ink', color);
+        else pending = true;
+      }
+      if (pending) return;
+      if (inkSweep.light) box?.setAttribute('data-sky-ink', 'light');
+      else box?.removeAttribute('data-sky-ink');
+      for (const unit of inkSweep.units) unit.el.style.removeProperty('--sky-ink');
+      inkSweep = null;
     };
 
     // Clip the text to the revealed area of the sky so it appears with the wipe.
@@ -307,9 +336,22 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
     const draw = (now: number) => {
       const t = reduceMotion ? 40 : (now - start) / 1000;
       const reveal = reduceMotion ? 3 : Math.min(3, (t / REVEAL_SECONDS) * 1.5);
-      drawSky(t, reveal);
-      drawClouds(t, reveal);
+      // Reduced motion keeps the daytime sky and skips the events.
+      const cycles = reduceMotion ? 0 : t / CYCLE_SECONDS;
+      if (Math.floor(cycles) !== cycle) {
+        cycle = Math.floor(cycles);
+        plan = planCycle(seed + cycle);
+      }
+      const u = cycles - cycle;
+      const mix = mixPhase(u);
+      drawSky(t, reveal, mix);
+      if (skyImage) {
+        if (!reduceMotion) drawEvents(skyImage, t, u, mix, plan, CYCLE_SECONDS);
+        skyCtx.putImageData(skyImage, 0, 0);
+      }
+      drawClouds(t, reveal, mix.cloud);
       drawMask(reveal);
+      updateInk(mix, t);
       if (!reduceMotion) frame = requestAnimationFrame(draw);
     };
 
@@ -327,6 +369,8 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
       cancelAnimationFrame(frame);
       observer.disconnect();
       clearMask();
+      box?.removeAttribute('data-sky-ink');
+      inkSweep?.units.forEach((unit) => unit.el.style.removeProperty('--sky-ink'));
     };
   }, [revealTarget]);
 

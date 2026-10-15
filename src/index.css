@@ -696,11 +696,32 @@ html {
   display: none;
 }
 
+/* Ink for text on the sky. Registered so the swap between black and white fades. */
+@property --sky-ink {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #000;
+}
+
 /* Animated pixel-sky panel behind the profile text */
 .profile-card {
   --portfolio-accent: #0b3d91;
+  --sky-ink: #000;
   isolation: isolate;
   font-weight: 800;
+}
+
+/* Set by PixelSky while the sky is dark (dusk through dawn). */
+.profile-card[data-sky-ink="light"] {
+  --portfolio-accent: #a8c8ff;
+  --sky-ink: #fff;
+}
+
+/* PixelSky sweeps a new ink colour across the box one piece of text at a time.
+   Each piece turns quickly so it never lingers at a grey that matches the sky.
+   Keeps the quick hover fades the links had. */
+.profile-card .profile-content :is(h1, h3, p, a, .profile-divider) {
+  transition: --sky-ink .3s ease, color .15s ease, opacity .15s ease;
 }
 
 .profile-card :is(h1, h2, h3, p, a) {
@@ -873,7 +894,7 @@ html {
     gap: 8px;
     margin-top: 18px;
     padding-block: 4px;
-    color: #000 !important;
+    color: var(--sky-ink) !important;
     font-size: 16px;
     letter-spacing: .08em;
     text-decoration: none;
@@ -901,7 +922,7 @@ html {
     align-self: flex-start;
     margin-bottom: 8px;
     padding-bottom: 4px;
-    border-bottom: 2px solid #000;
+    border-bottom: 2px solid var(--sky-ink);
     font-size: 12px;
     line-height: 1.25;
     letter-spacing: .12em;
@@ -956,7 +977,7 @@ html {
   .portfolio-link:focus-visible,
   .portfolio-social-link:focus-visible,
   .portfolio-email:focus-visible {
-    outline: 2px solid #000;
+    outline: 2px solid var(--sky-ink);
     outline-offset: 3px;
   }
 

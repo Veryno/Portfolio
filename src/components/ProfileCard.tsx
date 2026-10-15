@@ -3,8 +3,9 @@ import React, { useRef } from 'react';
 import { PixelSky } from './PixelSky';
 
 const PORTFOLIO_ACCENT = 'var(--portfolio-accent)';
-const TEXT_COLOR = '#000';
-const RULE_COLOR = 'rgba(0, 0, 0, 0.25)';
+// Text on the sky follows --sky-ink, which turns white while the sky is dark.
+const TEXT_COLOR = 'var(--sky-ink)';
+const RULE_COLOR = 'color-mix(in srgb, var(--sky-ink) 25%, transparent)';
 // On phones the header and footer sit on the dark page, outside the sky box.
 const MOBILE_TEXT_COLOR = '#fff';
 
