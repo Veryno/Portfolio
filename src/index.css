@@ -749,10 +749,10 @@ html {
     line-height: 1.4;
   }
 
-  /* The resume link is the main call to action, so it reads bigger than the bio. */
+  /* The resume link is the main call to action, so it reads a little bigger than the bio. */
   .profile-card .profile-resume {
-    font-size: 1.75rem;
-    letter-spacing: .06em;
+    font-size: 1.55rem;
+    letter-spacing: .04em;
   }
 
   .profile-card .portfolio-section {
@@ -890,7 +890,7 @@ html {
     margin-top: 18px;
     padding-block: 4px;
     color: var(--sky-ink) !important;
-    font-size: 18px;
+    font-size: 17px;
     letter-spacing: .08em;
     text-decoration: none;
   }
