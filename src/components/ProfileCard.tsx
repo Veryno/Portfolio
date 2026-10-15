@@ -1,4 +1,4 @@
-import { Github, Linkedin } from 'lucide-react';
+import { ArrowUpRight, Github, Linkedin } from 'lucide-react';
 import React, { useRef } from 'react';
 import { PixelSky } from './PixelSky';
 
@@ -128,6 +128,7 @@ export function ProfileCard() {
             style={{ color: TEXT_COLOR }}
           >
             DOWNLOAD RESUME
+            <ArrowUpRight className="profile-resume-icon" strokeWidth={3} aria-hidden="true" />
           </a>
 
           <div className="portfolio-details flex gap-6 md:gap-10 md:flex-1 min-h-0">

@@ -23,11 +23,18 @@ const REVEAL_DONE = 1.6;
 // equally well near 0.18; the gap stops it flickering at the crossover).
 const INK_LIGHT_BELOW = 0.19;
 const INK_DARK_ABOVE = 0.21;
-// A text colour change sweeps across the box over this long, top-left first
-// like the reveal, turning one piece of text at a time in reading order.
-const INK_SWEEP_SECONDS = 3;
-// The pieces of text that turn individually (each fades briefly; see index.css).
-const INK_UNITS = 'h1, h3, p, a, .profile-divider';
+// A text colour change rolls down the box over this long as a soft-edged
+// horizontal front, so everything on the same line turns together.
+const INK_SWEEP_SECONDS = 2.5;
+// Height of the front's soft edge, as a share of the text block's height.
+const INK_FEATHER = 0.15;
+
+function setMask(el: HTMLElement, mask: string | null) {
+  for (const prop of ['mask-image', '-webkit-mask-image']) {
+    if (mask) el.style.setProperty(prop, mask);
+    else el.style.removeProperty(prop);
+  }
+}
 
 // A twinkling star at sky pixel (x, y), or null. Keyed to the drifting sky so
 // stars travel with it; more of them come out as amount rises toward full night.
@@ -116,9 +123,9 @@ type PixelSkyProps = {
   revealTarget?: React.RefObject<HTMLElement | null>;
 };
 
-// The sky cycles through a day every three minutes, with the occasional sun,
-// moon, shooting star or ISS pass. While the sky is dark it marks its parent box
-// data-sky-ink="light" so the text on it switches to white.
+// The sky cycles through a day every three minutes on a clock every visitor
+// shares, with the occasional sun, moon, shooting star or ISS pass. While the sky
+// is dark it marks its parent box data-sky-ink="light" so the text on it turns white.
 export function PixelSky({ className, revealTarget }: PixelSkyProps) {
   const skyRef = useRef<HTMLCanvasElement>(null);
   const cloudRef = useRef<HTMLCanvasElement>(null);
@@ -146,13 +153,16 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
     const content = revealTarget?.current ?? null;
     const target = reduceMotion ? null : content;
     let masking = !!target;
-    // Each visit gets its own run of events; the loop always opens on the daytime sky.
-    const seed = Math.floor(Math.random() * 10000);
-    let cycle = 0;
-    let plan = planCycle(seed);
+    // Everyone shares one sky: the loop runs off the wall clock, so every visitor
+    // sees the same phase and the same events at the same moment.
+    const skyClock = () => Date.now() / 1000 / CYCLE_SECONDS;
+    let cycle = Math.floor(skyClock());
+    let plan = planCycle(cycle);
     const box = sky.parentElement;
-    let inkLight = false;
-    let inkSweep: { light: boolean; start: number; units: { el: HTMLElement; at: number }[] } | null = null;
+    // Open with the text colour that suits the sky right now; later changes sweep.
+    let inkLight = skyLuminance(mixPhase(skyClock() - cycle)) < INK_LIGHT_BELOW;
+    if (inkLight) box?.setAttribute('data-sky-ink', 'light');
+    let inkSweep: { light: boolean; start: number; ghost: HTMLElement } | null = null;
 
     const resize = () => {
       const rect = sky.getBoundingClientRect();
@@ -272,36 +282,64 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
       target?.style.removeProperty('clip-path');
     };
 
-    // When the sky crosses between light and dark, sweep the new text colour across
-    // the box: each piece of text takes it as the front passes, then the box takes
-    // over the colour once they all have.
+    const setInk = (light: boolean) => {
+      if (light) box?.setAttribute('data-sky-ink', 'light');
+      else box?.removeAttribute('data-sky-ink');
+    };
+
+    const endSweep = () => {
+      if (!inkSweep) return;
+      setInk(inkSweep.light);
+      inkSweep.ghost.remove();
+      if (content) setMask(content, null);
+      inkSweep = null;
+    };
+
+    // When the sky crosses between light and dark, roll the new text colour down
+    // the box. A copy of the text in the new colour sits exactly over the original
+    // and is uncovered top to bottom through a soft-edged mask while the original
+    // fades out beneath it, so a whole line (both link columns, underlines, icons)
+    // turns at once. Then the original takes the new colour and the copy goes.
     const updateInk = (mix: SkyMix, t: number) => {
       const lum = skyLuminance(mix);
       const light = lum < INK_LIGHT_BELOW ? true : lum > INK_DARK_ABOVE ? false : inkLight;
       if (light !== inkLight) {
         inkLight = light;
-        const area = sky.getBoundingClientRect();
-        const units = Array.from(content?.querySelectorAll<HTMLElement>(INK_UNITS) ?? [], (el) => {
-          // Timed from the element's top-left corner, so text turns as the front reaches it.
-          const r = el.getBoundingClientRect();
-          const fx = (r.left - area.left) / area.width;
-          const fy = (r.top - area.top) / area.height;
-          return { el, at: Math.min(1, Math.max(0, (fx * 0.75 + fy * 0.55) / 1.3)) * INK_SWEEP_SECONDS };
-        });
-        inkSweep = { light, start: t, units };
+        endSweep();
+        if (!content || !box || masking || reduceMotion) {
+          setInk(light);
+        } else {
+          const ghost = content.cloneNode(true) as HTMLElement;
+          const from = content.getBoundingClientRect();
+          const parent = box.getBoundingClientRect();
+          ghost.setAttribute('aria-hidden', 'true');
+          ghost.setAttribute('inert', '');
+          Object.assign(ghost.style, {
+            position: 'absolute',
+            left: `${from.left - parent.left}px`,
+            top: `${from.top - parent.top}px`,
+            width: `${from.width}px`,
+            height: `${from.height}px`,
+            margin: '0',
+            pointerEvents: 'none',
+          });
+          ghost.style.setProperty('--sky-ink', light ? '#fff' : '#000');
+          content.after(ghost);
+          inkSweep = { light, start: t, ghost };
+        }
       }
-      if (!inkSweep) return;
-      const color = inkSweep.light ? '#fff' : '#000';
-      let pending = false;
-      for (const unit of inkSweep.units) {
-        if (t - inkSweep.start >= unit.at) unit.el.style.setProperty('--sky-ink', color);
-        else pending = true;
-      }
-      if (pending) return;
-      if (inkSweep.light) box?.setAttribute('data-sky-ink', 'light');
-      else box?.removeAttribute('data-sky-ink');
-      for (const unit of inkSweep.units) unit.el.style.removeProperty('--sky-ink');
-      inkSweep = null;
+      if (!inkSweep || !content) return;
+      const elapsed = t - inkSweep.start;
+      const p = Math.min(1, elapsed / INK_SWEEP_SECONDS);
+      const front = p * p * (3 - 2 * p) * (1 + INK_FEATHER);
+      const solid = `${(front - INK_FEATHER) * 100}%`;
+      const edge = `${front * 100}%`;
+      setMask(inkSweep.ghost, `linear-gradient(to bottom, #000 ${solid}, transparent ${edge})`);
+      setMask(content, `linear-gradient(to bottom, transparent ${solid}, #000 ${edge})`);
+      // Once the copy covers everything, hand the colour to the real text, then drop
+      // the copy a moment later so any colour transitions on the links have settled.
+      if (p >= 1) setInk(inkSweep.light);
+      if (elapsed >= INK_SWEEP_SECONDS + 0.3) endSweep();
     };
 
     // Clip the text to the revealed area of the sky so it appears with the wipe.
@@ -336,11 +374,11 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
     const draw = (now: number) => {
       const t = reduceMotion ? 40 : (now - start) / 1000;
       const reveal = reduceMotion ? 3 : Math.min(3, (t / REVEAL_SECONDS) * 1.5);
-      // Reduced motion keeps the daytime sky and skips the events.
-      const cycles = reduceMotion ? 0 : t / CYCLE_SECONDS;
+      // Reduced motion shows the current shared sky as a still frame, without events.
+      const cycles = skyClock();
       if (Math.floor(cycles) !== cycle) {
         cycle = Math.floor(cycles);
-        plan = planCycle(seed + cycle);
+        plan = planCycle(cycle);
       }
       const u = cycles - cycle;
       const mix = mixPhase(u);
@@ -369,8 +407,8 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
       cancelAnimationFrame(frame);
       observer.disconnect();
       clearMask();
+      endSweep();
       box?.removeAttribute('data-sky-ink');
-      inkSweep?.units.forEach((unit) => unit.el.style.removeProperty('--sky-ink'));
     };
   }, [revealTarget]);
 

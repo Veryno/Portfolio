@@ -691,16 +691,16 @@ html {
   inherits: false
 }
 
+/* Diagonal arrow after the resume link, sized with its text */
+.profile-resume-icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
 /* Header/footer copies that sit outside the sky box on phones only */
 .profile-mobile-only {
   display: none;
-}
-
-/* Ink for text on the sky. Registered so the swap between black and white fades. */
-@property --sky-ink {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #000;
 }
 
 /* Animated pixel-sky panel behind the profile text */
@@ -715,13 +715,6 @@ html {
 .profile-card[data-sky-ink="light"] {
   --portfolio-accent: #a8c8ff;
   --sky-ink: #fff;
-}
-
-/* PixelSky sweeps a new ink colour across the box one piece of text at a time.
-   Each piece turns quickly so it never lingers at a grey that matches the sky.
-   Keeps the quick hover fades the links had. */
-.profile-card .profile-content :is(h1, h3, p, a, .profile-divider) {
-  transition: --sky-ink .3s ease, color .15s ease, opacity .15s ease;
 }
 
 .profile-card :is(h1, h2, h3, p, a) {
@@ -756,8 +749,10 @@ html {
     line-height: 1.4;
   }
 
+  /* The resume link is the main call to action, so it reads bigger than the bio. */
   .profile-card .profile-resume {
-    font-size: 1.4rem;
+    font-size: 1.75rem;
+    letter-spacing: .06em;
   }
 
   .profile-card .portfolio-section {
@@ -888,22 +883,16 @@ html {
     line-height: 1.45;
   }
 
-  /* Plain text call to action with a download arrow. */
+  /* Plain text call to action with an arrow. */
   .profile-resume {
     align-self: flex-start;
     gap: 8px;
     margin-top: 18px;
     padding-block: 4px;
     color: var(--sky-ink) !important;
-    font-size: 16px;
+    font-size: 18px;
     letter-spacing: .08em;
     text-decoration: none;
-  }
-
-  .profile-resume::after {
-    content: "\2193";
-    font-size: 17px;
-    line-height: 1;
   }
 
   .portfolio-details {

@@ -31,8 +31,12 @@ export type SkyPlan = {
   streaks: Streak[];
 };
 
+// n is the cycle number on the shared clock (cycles since 1970), so every visitor
+// rolls the same events for the same cycle.
 export function planCycle(n: number): SkyPlan {
-  const r = (k: number) => hash(n * 92821 + k, 4243);
+  // Fold n down first: it's too big to feed the hash directly without losing precision.
+  const base = Math.floor(hash(n & 0xffff, n >>> 16) * 1e6);
+  const r = (k: number) => hash(k + 4243, base);
   const moonPhase = (k: number) => MOON_PHASES[Math.floor(r(k) * MOON_PHASES.length)];
   return {
     dayMoon: r(1) < ODDS.dayMoon ? { jitter: r(2), phase: moonPhase(3), rising: r(4) < 0.5 } : null,
@@ -43,7 +47,7 @@ export function planCycle(n: number): SkyPlan {
     // Usually none; sometimes one, occasionally two, somewhere in the dark stretch.
     streaks: (r(19) < ODDS.streak ? (r(20) < ODDS.secondStreak ? [0, 1] : [0]) : []).map((k) => ({
       at: 0.53 + r(21 + k) * 0.16,
-      seed: n * 31 + k,
+      seed: base * 4 + k,
     })),
   };
 }
