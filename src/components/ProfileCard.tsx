@@ -118,7 +118,7 @@ export function ProfileCard() {
           <div className="profile-divider h-px flex-shrink-0" style={{ backgroundColor: RULE_COLOR }}></div>
 
           <p className="profile-bio leading-relaxed text-base md:text-xl flex-shrink-0" style={{ color: TEXT_COLOR }}>
-            Software Engineer with hands-on experience building full-stack apps and applications I find interesting. I care about clean architecture, fast execution, and solving real problems.
+            Software Engineer who builds full-stack applications, often around ideas I find genuinely interesting. I care about clean architecture, fast execution, and solving real problems.
           </p>
 
           <a
