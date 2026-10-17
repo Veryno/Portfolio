@@ -1,9 +1,10 @@
 import { ArrowUpRight, Github, Linkedin } from 'lucide-react';
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { PixelSky } from './PixelSky';
 
-const PORTFOLIO_ACCENT = 'var(--portfolio-accent)';
-// Text on the sky follows --sky-ink, which turns white while the sky is dark.
+// Text on the sky follows --sky-ink, which turns white while the sky is dark. With
+// a mouse, links take --sky-accent on hover (see index.css); touch screens keep
+// links one colour.
 const TEXT_COLOR = 'var(--sky-ink)';
 const RULE_COLOR = 'color-mix(in srgb, var(--sky-ink) 25%, transparent)';
 // On phones the header and footer sit on the dark page, outside the sky box.
@@ -25,13 +26,6 @@ const PROJECTS = [
 
 type SectionProps = { className?: string; color: string };
 
-function hoverHandlers(color: string) {
-  return {
-    onMouseEnter: (e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = PORTFOLIO_ACCENT),
-    onMouseLeave: (e: React.MouseEvent<HTMLAnchorElement>) => (e.currentTarget.style.color = color),
-  };
-}
-
 function ProfileHeader({ className = '', color }: SectionProps) {
   return (
     <div className={`profile-header flex flex-col gap-1 md:gap-2 ${className}`}>
@@ -51,7 +45,6 @@ function ProfileFooter({ className = '', color }: SectionProps) {
           rel="noopener noreferrer"
           className="portfolio-social-link transition-colors"
           style={{ color }}
-          {...hoverHandlers(color)}
           aria-label="GitHub"
         >
           <Github className="w-5 h-5 md:w-6 md:h-6" />
@@ -62,7 +55,6 @@ function ProfileFooter({ className = '', color }: SectionProps) {
           rel="noopener noreferrer"
           className="portfolio-social-link transition-colors"
           style={{ color }}
-          {...hoverHandlers(color)}
           aria-label="LinkedIn"
         >
           <Linkedin className="w-5 h-5 md:w-6 md:h-6" />
@@ -70,9 +62,8 @@ function ProfileFooter({ className = '', color }: SectionProps) {
       </div>
       <a
         href="mailto:yaacobabdullahh@gmail.com"
-        className="portfolio-email hover:opacity-80 transition-opacity text-base md:text-xl underline"
+        className="portfolio-email text-base md:text-xl underline"
         style={{ color }}
-        {...hoverHandlers(color)}
       >
         yaacobabdullahh@gmail.com
       </a>
@@ -91,9 +82,8 @@ function LinkSection({ title, links }: { title: string; links: { label: string; 
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="portfolio-link hover:opacity-80 transition-opacity text-base md:text-xl underline"
+            className="portfolio-link text-base md:text-xl underline"
             style={{ color: TEXT_COLOR }}
-            {...hoverHandlers(TEXT_COLOR)}
           >
             {label}
           </a>
@@ -124,7 +114,7 @@ export function ProfileCard() {
           <a
             href="/resume/Yaacob_Abdullah_Resume.pdf"
             download="Yaacob_Abdullah_Resume.pdf"
-            className="profile-resume hover:opacity-80 transition-opacity inline-flex items-center gap-2 w-fit text-base md:text-xl tracking-wide flex-shrink-0"
+            className="profile-resume inline-flex items-center gap-2 w-fit text-base md:text-xl tracking-wide flex-shrink-0"
             style={{ color: TEXT_COLOR }}
           >
             DOWNLOAD RESUME

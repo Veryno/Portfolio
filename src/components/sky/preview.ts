@@ -1,5 +1,6 @@
 import type { AuroraForm } from './aurora';
-import { DAY_SECONDS, build, planDay, rollFor, type Crossing, type DayPlan, type Span } from './plan';
+import { DAY_SECONDS } from './clock';
+import { build, planDay, rollFor, type Crossing, type DayPlan, type Span } from './plan';
 import { weatherAt, type Condition, type SkyWeather, type Stretch } from './weather';
 
 // Preview links: ?sky=<name> on the site calls up one sight on a loop, in the

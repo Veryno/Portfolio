@@ -1,4 +1,5 @@
 import { AURORA_FORMS, AURORA_ODDS, type Aurora } from './aurora';
+import { DAY_SECONDS } from './clock';
 import { hash } from './pixel';
 import { isClearish, isWet, rank, stretchAt, type Stretch } from './weather';
 
@@ -6,9 +7,6 @@ import { isClearish, isWet, rank, stretchAt, type Stretch } from './weather';
 // from the odds below, gated on that day's weather (kites need a breeze, the
 // aurora needs a clear night, sprites need a storm...). Everything keys off
 // the day number on the shared clock, so every visitor sees the same sky.
-
-// Seconds in one sky day on the shared clock: day, sunset, night, sunrise and back.
-export const DAY_SECONDS = 180;
 
 // Chance per day once the weather allows it. Tuned so even the legendary sights
 // turn up within an hour or two of watching.
@@ -151,9 +149,11 @@ export function rollFor(n: number): { base: number; r: Roll } {
 const pickIn = (r: number, [from, to]: readonly [number, number]) => from + r * (to - from);
 
 export function crossing(r: Roll, key: number, i: number, window: readonly [number, number], seconds: number, yFrom = 0.08, yTo = 0.6): Crossing {
+  const length = seconds * (0.8 + r(key, i + 100) * 0.4);
   return {
-    at: pickIn(r(key, i), window),
-    seconds: seconds * (0.8 + r(key, i + 100) * 0.4),
+    // Late starters set off a little earlier so they're across before the day rolls over.
+    at: Math.min(pickIn(r(key, i), window), 0.995 - length / DAY_SECONDS),
+    seconds: length,
     y: yFrom + r(key, i + 200) * (yTo - yFrom),
     slope: (r(key, i + 300) - 0.5) * 0.3,
     dir: r(key, i + 400) < 0.5 ? 1 : -1,

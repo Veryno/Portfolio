@@ -3,7 +3,9 @@
   import App from "./App.tsx";
   import "./index.css";
   import React from "react";
+  import { watchForUpdates } from "./update";
 
 
   createRoot(document.getElementById("root")!).render(<App />);
+  if (import.meta.env.PROD) watchForUpdates();
   

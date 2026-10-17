@@ -705,7 +705,6 @@ html {
 
 /* Animated pixel-sky panel behind the profile text */
 .profile-card {
-  --portfolio-accent: #0b3d91;
   --sky-ink: #000;
   isolation: isolate;
   font-weight: 800;
@@ -713,8 +712,19 @@ html {
 
 /* Set by PixelSky while the sky is dark (dusk through dawn). */
 .profile-card[data-sky-ink="light"] {
-  --portfolio-accent: #a8c8ff;
   --sky-ink: #fff;
+}
+
+/* With a mouse, links over the sky take a hover colour PixelSky picks to suit the
+   sky behind them. Touch screens never change link colours, not even on a tap. */
+.profile-card a {
+  transition: color .2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .profile-card a:hover {
+    color: var(--sky-accent, var(--sky-ink)) !important;
+  }
 }
 
 .profile-card :is(h1, h2, h3, p, a) {
@@ -954,7 +964,7 @@ html {
     font-size: calc(16 * var(--dp));
     line-height: 1.3;
     overflow-wrap: anywhere;
-    -webkit-tap-highlight-color: rgba(11, 61, 145, .15);
+    -webkit-tap-highlight-color: transparent;
   }
 
   .portfolio-footer {
@@ -977,7 +987,7 @@ html {
     height: calc(40 * var(--dp));
     align-items: center;
     justify-content: center;
-    -webkit-tap-highlight-color: rgba(11, 61, 145, .15);
+    -webkit-tap-highlight-color: transparent;
   }
 
   .portfolio-social-link svg {
@@ -991,7 +1001,7 @@ html {
     line-height: 1.3;
     overflow-wrap: anywhere;
     text-align: right;
-    -webkit-tap-highlight-color: rgba(11, 61, 145, .15);
+    -webkit-tap-highlight-color: transparent;
   }
 
   .profile-resume:focus-visible,
@@ -1006,15 +1016,6 @@ html {
     outline-color: #fff;
   }
 
-  .profile-resume:active {
-    color: var(--portfolio-accent) !important;
-  }
-
-  .portfolio-link:active,
-  .portfolio-social-link:active,
-  .portfolio-email:active {
-    color: var(--portfolio-accent) !important;
-  }
 }
 
 /* Portrait phones: the layout above is designed at 393 x 764 CSS px (the

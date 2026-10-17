@@ -1,6 +1,6 @@
 import { envelope, since, tag, within, type Frame } from './context';
 import type { Balloon, Crossing, Kite } from './plan';
-import { dot, hash, lerp3, plot, sprite, valueNoise, type RGB } from './pixel';
+import { dot, hash, lerp3, plot, smooth, sprite, valueNoise, type RGB } from './pixel';
 
 // Things that fly across the box: planes, birds, bats, kites, balloons, a blimp,
 // and the owl that sometimes crosses the full moon.
@@ -105,16 +105,18 @@ export function drawBirds(f: Frame) {
 
 const STARLING: RGB = [26, 24, 34];
 
-// Hundreds of starlings wheeling together into a shape-shifting cloud at dusk.
+// Hundreds of starlings wheeling together into a shape-shifting cloud at dusk,
+// sweeping in from one side and carrying on out the other.
 export function drawMurmuration(f: Frame) {
   const span = f.plan.murmuration;
   if (!span) return;
   const p = within(f.u, span.from, span.to);
   if (p < 0) return;
   const { cols, rows, t } = f;
-  const amount = envelope(p, 0.15);
+  const amount = envelope(p, 0.08);
   const s = span.seed % 1000;
-  const cx = cols * (0.5 + 0.22 * Math.sin(t * 0.13 + s));
+  const dir = s % 2 ? 1 : -1;
+  const cx = cols * (0.5 + dir * (p - 0.5) * 1.8 + 0.1 * Math.sin(t * 0.13 + s));
   const cy = rows * (0.42 + 0.08 * Math.cos(t * 0.1 + s));
   const R = rows * 0.13;
   for (let k = 0; k < 240; k++) {
@@ -134,12 +136,15 @@ export function drawBats(f: Frame) {
   const p = within(f.u, span.from, span.to);
   if (p < 0) return;
   const { cols, rows, t } = f;
-  const amount = envelope(p, 0.15);
   const s = span.seed % 1000;
   for (let k = 0; k < 5; k++) {
+    // Each bat flutters in from a side, darts about, and flutters back out.
+    const edge = 0.14 + 0.04 * k;
+    const inside = smooth(0, edge, p) * (1 - smooth(1 - edge, 1, p));
+    const from = hash(s, k) < 0.5 ? -8 : cols + 8;
     const x = cols * (0.12 + 0.76 * valueNoise(t * 0.35 + k * 7.3, s + k)) + Math.sin(t * 9 + k) * 1.5;
     const y = rows * (0.5 + 0.32 * valueNoise(t * 0.5 + k * 3.1, s + k + 11)) + Math.cos(t * 11 + k) * 1.5;
-    bird(f, Math.round(x), Math.round(y), t * 14 + k, [20, 16, 26], 0.9 * amount);
+    bird(f, Math.round(from + (x - from) * inside), Math.round(y), t * 14 + k, [20, 16, 26], 0.9);
   }
 }
 
@@ -159,10 +164,14 @@ export function drawKites(f: Frame) {
   const p = within(f.u, 0.02, 0.25);
   if (p < 0) return;
   const lean = weather.windDir * (4 + weather.wind * 6);
-  plan.kites.forEach((kite: Kite) => {
+  plan.kites.forEach((kite: Kite, k: number) => {
     const s = kite.seed % 1000;
-    const x = Math.round(kite.x * cols + Math.sin(t * 0.7 + s) * 4 + (valueNoise(t * 0.4, s) - 0.5) * 8 - lean);
-    const y = Math.round(kite.y * rows + Math.cos(t * 0.9 + s) * 2.5);
+    // Launched from below one after another, climbing into place on the string, and
+    // reeled back down at the end.
+    const up = smooth(0.03 * k, 0.16 + 0.03 * k, p) * (1 - smooth(0.82 - 0.03 * k, 0.97 - 0.03 * k, p));
+    if (up <= 0) return;
+    const x = Math.round(kite.x * cols + Math.sin(t * 0.7 + s) * 4 * up + (valueNoise(t * 0.4, s) - 0.5) * 8 - lean + (1 - up) * lean * 3);
+    const y = Math.round(rows + 12 - (rows + 12 - kite.y * rows) * up + Math.cos(t * 0.9 + s) * 2.5 * up);
     const [main, dark] = KITE_COLORS[kite.color % KITE_COLORS.length];
     // The string sags from the kite down to someone below the box.
     const groundX = x + lean * 6;
@@ -209,17 +218,20 @@ function hotAirBalloon(f: Frame, cx: number, cy: number, R: number, colors: [RGB
   for (let dx = -1; dx <= 1; dx++) for (let dy = 0; dy <= 1; dy++) plot(img, cx + dx, by + dy, BASKET, 1);
 }
 
-// Striped balloons drifting slowly up on a calm morning.
+// Striped balloons rising slowly on a calm morning, then drifting off downwind and
+// climbing out of sight.
 export function drawHotAir(f: Frame) {
   const { plan, cols, rows, weather } = f;
   if (!plan.hotAir.length) return;
   const p = within(f.u, 0.77, 0.99);
   if (p < 0) return;
+  const dir = weather.windDir >= 0 ? 1 : -1;
   plan.hotAir.forEach((b: Balloon, k: number) => {
     const R = Math.max(3, Math.round(6 * b.size * f.scale));
     const rise = Math.min(1, p * (0.9 + k * 0.15));
-    const cx = Math.round(b.x * cols + rise * 18 * weather.windDir + Math.sin(f.t * 0.3 + k) * 1.5);
-    const cy = Math.round(rows * (1.12 - rise * (0.75 + b.size * 0.2)));
+    const leave = smooth(0.62 + k * 0.04, 0.98, p);
+    const cx = Math.round(b.x * cols + rise * 18 * weather.windDir + leave * dir * cols * 0.95 + Math.sin(f.t * 0.3 + k) * 1.5);
+    const cy = Math.round(rows * (1.12 - rise * (0.75 + b.size * 0.2) - leave * 0.45));
     hotAirBalloon(f, cx, cy, R, BALLOON_COLORS[b.colors % BALLOON_COLORS.length]);
   });
 }
@@ -295,15 +307,19 @@ export function drawBlimp(f: Frame) {
 const OWL_UP = ['#.....#', '##.#.##', '..###..'];
 const OWL_DOWN = ['..###..', '##.#.##', '#.....#'];
 
-// A tiny owl silhouette gliding across the face of the full moon.
+// A tiny owl silhouette gliding in from the edge of the box, across the face of the
+// full moon, and out the other side.
 export function drawOwl(f: Frame) {
   const span = f.plan.owl;
   if (!span || !f.moon) return;
   const p = within(f.u, span.from, span.to);
   if (p < 0) return;
-  const { moon, t } = f;
-  const x = Math.round(moon.x - moon.r * 3 + p * moon.r * 6);
-  const y = Math.round(moon.y + Math.sin(p * Math.PI * 2) * 2);
+  const { moon, t, cols } = f;
+  const dir = span.seed % 2 ? 1 : -1;
+  const from = dir > 0 ? -10 : cols + 10;
+  const to = dir > 0 ? cols + 10 : -10;
+  const x = Math.round(p < 0.5 ? from + (moon.x - from) * (p / 0.5) : moon.x + (to - moon.x) * ((p - 0.5) / 0.5));
+  const y = Math.round(moon.y + (p - 0.5) * 8 + Math.sin(p * Math.PI * 2) * 2);
   sprite(f.img, x - 3, y - 1, Math.floor(t * 5) % 2 ? OWL_UP : OWL_DOWN, { '#': [10, 10, 16] }, 1);
   tag(f, 'Owl across the moon', x, y, 6);
 }

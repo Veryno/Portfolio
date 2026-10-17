@@ -161,7 +161,8 @@ function channel(v: number) {
   return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
 }
 
-function luminance(c: RGB) {
+// Relative luminance of a colour (0 black .. 1 white), as used for contrast ratios.
+export function luminance(c: RGB) {
   return 0.2126 * channel(c[0]) + 0.7152 * channel(c[1]) + 0.0722 * channel(c[2]);
 }
 

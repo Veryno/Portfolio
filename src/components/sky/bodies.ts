@@ -67,9 +67,12 @@ function sunPosition(f: Frame): { x: number; y: number; low: boolean; key: 'rise
   if (plan.noonSun) {
     const p = within(u, WINDOWS.noonSun[0], WINDOWS.noonSun[1]);
     if (p >= 0) {
-      // High overhead, peeking in along the top edge; lower and fully in view on an eclipse day.
+      // High overhead, peeking in along the top edge; lower and fully in view on an
+      // eclipse day. It slides down into view at the start and back up at the end.
       const x = 0.28 + p * 0.42 + (plan.noonSun.jitter - 0.5) * 0.1;
-      return { x, y: plan.eclipse ? 0.2 : plan.halo ? 0.06 : 0.02, low: false, key: 'noon', p };
+      const y = plan.eclipse ? 0.2 : plan.halo ? 0.06 : 0.02;
+      const shown = smooth(0, 0.12, p) * (1 - smooth(0.88, 1, p));
+      return { x, y: -0.3 + (y + 0.3) * shown, low: false, key: 'noon', p };
     }
   }
   return null;

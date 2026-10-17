@@ -1,3 +1,4 @@
+import { DAY_SECONDS } from './clock';
 import { clamp, fbm1, hash, lerp3, mixN, smooth, vnoise1, type RGB } from './pixel';
 import type { SkyMix } from './phases';
 
@@ -125,8 +126,12 @@ const LOOK: Record<Condition, { cover: number; precip: number; storm: number; fo
   fog: { cover: 0.3, precip: 0, storm: 0, fog: 1, dark: 0 },
 };
 
+// Each stretch eases into the next one over its last part, from this far in, so
+// clouds build and rain sets in gradually (15 to 20 seconds).
+const BLEND_FROM = 0.6;
+
 // The weather as it looks at one moment: the current stretch blended into the next
-// over the last fifth of it, so clouds build and rain sets in gradually.
+// over the last part of it.
 export type SkyWeather = {
   now: Stretch;
   next: Stretch;
@@ -156,7 +161,7 @@ export function weatherAt(day: number, u: number, force?: Partial<Stretch> | nul
   const next = pick(g + 1);
   const prev = pick(g - 1);
   const f = (u - STRETCH_BOUNDS[s]) / (STRETCH_BOUNDS[s + 1] - STRETCH_BOUNDS[s]);
-  const into = force ? 0 : smooth(0.8, 1, f);
+  const into = force ? 0 : smooth(BLEND_FROM, 1, f);
   const a = LOOK[now.condition];
   const b = LOOK[next.condition];
   const m = (x: number, y: number) => mixN(x, y, into);
@@ -219,5 +224,70 @@ export function applyWeather(mix: SkyMix, w: SkyWeather): SkyMix {
     stars: mix.stars * Math.pow(1 - w.cover, 2) * (1 - w.fog * 0.7),
     cloud: lerp3(mix.cloud, cloudGrey, w.cover * 0.8).map((v) => v * (1 - w.dark * 0.45)) as RGB,
     sun: mix.sun,
+  };
+}
+
+// How far the wind has carried the clouds by a moment on the shared clock, for the
+// sky's cloud bands and for the dot clouds. It's worked out from the weather
+// timeline itself rather than counted up on each screen, so every screen agrees on
+// where the clouds are. Speed and direction follow each stretch's wind and ease
+// into the next stretch's along with the rest of the weather. The total starts
+// over every DRIFT_BLOCK stretches (about four days), the only moment the clouds jump.
+export type Drift = { bands: number; dots: number; t: number };
+
+const DRIFT_BLOCK = 8192;
+// Speed with no wind, and how much a full wind adds: [sky bands, dot clouds].
+const DRIFT_RATES: [number, number][] = [[0.6, 1.6], [0.55, 1.5]];
+
+const stretchSeconds = (g: number) => (STRETCH_BOUNDS[(g & 3) + 1] - STRETCH_BOUNDS[g & 3]) * DAY_SECONDS;
+
+// Distance covered from the start of stretch a (which eases into b) to fraction f
+// of it, at a speed of (base + gain * wind) * direction.
+function stretchDrift(a: Stretch, b: Stretch, f: number, seconds: number, [base, gain]: [number, number]) {
+  const speed = (base + gain * a.wind) * a.windDir;
+  if (f <= BLEND_FROM) return seconds * f * speed;
+  // Through the ease, wind and direction each slide toward b's along a smoothstep e;
+  // the speed is then speed + p * e + q * e^2, integrated exactly.
+  const dw = b.wind - a.wind;
+  const dd = b.windDir - a.windDir;
+  const p = (base + gain * a.wind) * dd + gain * dw * a.windDir;
+  const q = gain * dw * dd;
+  const s = (f - BLEND_FROM) / (1 - BLEND_FROM);
+  const e1 = s ** 3 - s ** 4 / 2;
+  const e2 = (9 * s ** 5) / 5 - 2 * s ** 6 + (4 * s ** 7) / 7;
+  return seconds * (BLEND_FROM * speed + (1 - BLEND_FROM) * (speed * s + p * e1 + q * e2));
+}
+
+let driftCache: { start: number; upTo: number; bands: number; dots: number; last: Stretch } | null = null;
+
+// sec is seconds on the shared clock. t comes back as seconds since the block
+// started, a small, steady number for timing everything that moves.
+export function drift(sec: number): Drift {
+  const days = sec / DAY_SECONDS;
+  const n = Math.floor(days);
+  const u = days - n;
+  const k = stretchOf(u);
+  const g = n * 4 + k;
+  const start = g - (((g % DRIFT_BLOCK) + DRIFT_BLOCK) % DRIFT_BLOCK);
+  if (!driftCache || driftCache.start !== start || driftCache.upTo > g) {
+    driftCache = { start, upTo: start, bands: 0, dots: 0, last: stretchAt(start) };
+  }
+  // Add up every whole stretch since the block began (only the new ones after the first call).
+  const c = driftCache;
+  while (c.upTo < g) {
+    const next = stretchAt(c.upTo + 1);
+    const seconds = stretchSeconds(c.upTo);
+    c.bands += stretchDrift(c.last, next, 1, seconds, DRIFT_RATES[0]);
+    c.dots += stretchDrift(c.last, next, 1, seconds, DRIFT_RATES[1]);
+    c.last = next;
+    c.upTo++;
+  }
+  const next = stretchAt(g + 1);
+  const seconds = stretchSeconds(g);
+  const f = (u - STRETCH_BOUNDS[k]) / (STRETCH_BOUNDS[k + 1] - STRETCH_BOUNDS[k]);
+  return {
+    bands: c.bands + stretchDrift(c.last, next, f, seconds, DRIFT_RATES[0]),
+    dots: c.dots + stretchDrift(c.last, next, f, seconds, DRIFT_RATES[1]),
+    t: sec - (start / 4) * DAY_SECONDS,
   };
 }

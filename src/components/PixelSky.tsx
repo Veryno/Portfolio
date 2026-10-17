@@ -2,12 +2,13 @@ import React, { useLayoutEffect, useRef } from 'react';
 import { FRINGE, drawBase } from './sky/base';
 import { drawFrontClouds, makeCloudPool, type CloudLayer, type DotCloud } from './sky/clouds';
 import type { Tag } from './sky/context';
-import { mixPhase, skyLuminance, type SkyMix } from './sky/phases';
-import { BLOCK, PIXEL, hash, lerp3 } from './sky/pixel';
-import { DAY_SECONDS, planDay, type DayPlan } from './sky/plan';
+import { DAY_SECONDS, sharedNow, syncClock } from './sky/clock';
+import { luminance, mixPhase, skyLuminance, type SkyMix } from './sky/phases';
+import { BLOCK, PIXEL, hash, lerp3, type RGB } from './sky/pixel';
+import { planDay, type DayPlan } from './sky/plan';
 import { PREVIEW_DAY, blankPlan, findPreview, playPreview } from './sky/preview';
 import { makeFrame, renderSky } from './sky/render';
-import { applyWeather, weatherAt, type SkyWeather } from './sky/weather';
+import { applyWeather, drift, weatherAt, type SkyWeather } from './sky/weather';
 
 const REVEAL_SECONDS = 2.4;
 // How far (in CSS px) the dot clouds may drift outside the box, the same on every
@@ -37,6 +38,48 @@ function setMask(el: HTMLElement, mask: string | null) {
   }
 }
 
+// Hue (degrees), saturation and lightness of a colour.
+function hsl([r, g, b]: RGB): [number, number, number] {
+  const [x, y, z] = [r / 255, g / 255, b / 255];
+  const max = Math.max(x, y, z);
+  const min = Math.min(x, y, z);
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (!d) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = max === x ? ((y - z) / d) % 6 : max === y ? (z - x) / d + 2 : (x - y) / d + 4;
+  return [(h * 60 + 360) % 360, s, l];
+}
+
+function fromHsl(h: number, s: number, l: number): RGB {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+}
+
+const contrast = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+
+// The hover colour for links over this sky: the sky's own hue, deep on a light sky
+// and pale on a dark one, pushed darker or lighter until it reads clearly (3:1, the
+// bar for large bold text, so it can still stand apart from plain black or white).
+function accentFor(mix: SkyMix, lightText: boolean) {
+  const all = [...mix.top, ...mix.bottom];
+  const sky = [0, 1, 2].map((k) => all.reduce((sum, c) => sum + c[k], 0) / all.length) as RGB;
+  const [h, s] = hsl(sky);
+  const hue = s < 0.08 ? 215 : h;
+  const back = luminance(sky);
+  const sat = lightText ? 0.85 : 0.75;
+  let l = lightText ? 0.78 : 0.34;
+  let color = fromHsl(hue, sat, l);
+  for (let i = 0; i < 12 && contrast(luminance(color), back) < 3; i++) {
+    l += lightText ? 0.02 : -0.02;
+    color = fromHsl(hue, sat, l);
+  }
+  return `rgb(${color.map(Math.round).join(' ')})`;
+}
+
 // Ragged, stair-stepped reveal front sweeping from the top-left.
 function revealFront(bx: number, by: number, blockCols: number, blockRows: number) {
   return (bx / blockCols) * 0.75 + (by / blockRows) * 0.55 + hash(by, 99) * 0.12;
@@ -52,9 +95,11 @@ type PixelSkyProps = {
 type SkyNow = { n: number; u: number; weather: SkyWeather; plan: DayPlan };
 
 // The sky runs through a day every three minutes on a clock every visitor shares,
-// with weather that changes over its own timeline and sights rolled for each day.
-// While the sky is dark it marks its parent box data-sky-ink="light" so the text
-// on it turns white. Adding ?sky=<name> to the address plays one sight on a loop.
+// with weather that changes over its own timeline and sights rolled for each day,
+// so two screens open at once show the same sky. While the sky is dark it marks
+// its parent box data-sky-ink="light" so the text on it turns white, and it sets
+// --sky-accent to a hover colour that suits the sky. Adding ?sky=<name> to the
+// address plays one sight on a loop.
 export function PixelSky({ className, revealTarget }: PixelSkyProps) {
   const skyRef = useRef<HTMLCanvasElement>(null);
   const cloudRef = useRef<HTMLCanvasElement>(null);
@@ -79,10 +124,11 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
     let frame = 0;
     const start = performance.now();
     let last = start;
-    // How far the background bands and the dot clouds have drifted. The wind sets
-    // their pace and turns them around when it changes direction.
-    let travel = reduceMotion ? 40 : 0;
-    let cloudTravel = reduceMotion ? 40 : 0;
+    // How far the background bands and the dot clouds have drifted. On the shared
+    // sky this comes from the shared clock; a preview's clouds drift on from here.
+    let travel = 0;
+    let cloudTravel = 0;
+    syncClock();
     const content = revealTarget?.current ?? null;
     const target = reduceMotion ? null : content;
     let masking = !!target;
@@ -97,9 +143,9 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
       plan = blankPlan(PREVIEW_DAY);
       preview.setup?.(plan, preview.u);
     }
-    const skyNow = (t: number): SkyNow => {
+    const skyNow = (sec: number, t: number): SkyNow => {
       if (preview && plan) return { ...playPreview(preview, plan, t), plan };
-      const days = Date.now() / 1000 / DAY_SECONDS;
+      const days = sec / DAY_SECONDS;
       const n = Math.floor(days);
       if (n !== planDayNumber || !plan) {
         plan = planDay(n);
@@ -109,7 +155,7 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
     };
 
     // Open with the text colour that suits the sky right now; later changes sweep.
-    const opening = skyNow(0);
+    const opening = skyNow(sharedNow() / 1000, 0);
     let inkLight = skyLuminance(applyWeather(mixPhase(opening.u), opening.weather)) < INK_LIGHT_BELOW;
     if (inkLight) box?.setAttribute('data-sky-ink', 'light');
     let inkSweep: { light: boolean; start: number; ghost: HTMLElement } | null = null;
@@ -247,6 +293,18 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
       target.style.clipPath = `polygon(${points.join(', ')})`;
     };
 
+    // Keep the link hover colour in step with the sky, a couple of times a second.
+    let accent = '';
+    let accentAt = -Infinity;
+    const updateAccent = (mix: SkyMix, t: number) => {
+      if (!box || t - accentAt < 0.5) return;
+      accentAt = t;
+      const next = accentFor(mix, inkLight);
+      if (next === accent) return;
+      accent = next;
+      box.style.setProperty('--sky-accent', next);
+    };
+
     // Show the name of the sight under the pointer, over the sight itself (or by the
     // pointer for things that fill the sky, like a snowstorm). Once up, a tag
     // follows its sight for a moment even after it drifts out from under the pointer.
@@ -288,17 +346,25 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
     };
 
     const draw = (now: number) => {
-      const t = reduceMotion ? 40 : (now - start) / 1000;
+      // The reveal and the text colour sweep run on this page's own time; the sky
+      // runs on the shared clock, everything that moves in it included.
+      const pageT = reduceMotion ? 40 : (now - start) / 1000;
       const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
       last = now;
-      const reveal = reduceMotion ? 3 : Math.min(3, (t / REVEAL_SECONDS) * 1.5);
-      const { n, u, weather, plan: today } = skyNow(t);
-      if (!reduceMotion) {
-        travel += dt * (0.6 + weather.wind * 1.6) * (weather.windDir >= 0 ? 1 : -1) * Math.max(0.15, Math.abs(weather.windDir));
+      const reveal = reduceMotion ? 3 : Math.min(3, (pageT / REVEAL_SECONDS) * 1.5);
+      const sec = sharedNow() / 1000;
+      const shared = drift(sec);
+      const t = shared.t;
+      const { n, u, weather, plan: today } = skyNow(sec, t);
+      if (preview) {
+        travel += dt * (0.6 + weather.wind * 1.6) * weather.windDir;
         cloudTravel += dt * (0.55 + weather.wind * 1.5) * weather.windDir;
+      } else {
+        travel = shared.bands;
+        cloudTravel = shared.dots;
       }
       if (skyImage && layer) {
-        const f = makeFrame({ img: skyImage, field, t, sec: Date.now() / 1000, u, n, dayLength: DAY_SECONDS, plan: today, weather, travel });
+        const f = makeFrame({ img: skyImage, field, t, sec, u, n, dayLength: DAY_SECONDS, plan: today, weather, travel });
         const blockCols = Math.ceil(cols / BLOCK);
         const blockRows = Math.ceil(rows / BLOCK);
         drawBase(f, (bx, by) => reveal - revealFront(bx, by, blockCols, blockRows));
@@ -310,7 +376,8 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
         drawFrontClouds(layer, clouds, t, cloudTravel, weather, f.mix.cloud, behind, appear, f.flash);
         cloudCtx.putImageData(layer.img, 0, 0);
         tags = reveal > REVEAL_DONE ? f.tags : [];
-        updateInk(f.mix, t);
+        updateInk(f.mix, pageT);
+        updateAccent(f.mix, pageT);
       }
       drawMask(reveal);
       showTag(now);
