@@ -40,10 +40,12 @@ export function valueNoise(x: number, y: number) {
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
 
-// Sky brightness for block (x, y): 0 = deep sky, 1 = bright cloud bank.
-export function skyField(x: number, y: number, t: number) {
+// Sky brightness for block (x, y): 0 = deep sky, 1 = bright cloud bank. drift is
+// how far the bands have travelled (in seconds at the normal speed), so the wind
+// can speed them up, slow them down or turn them around.
+export function skyField(x: number, y: number, t: number, drift = t) {
   // Wide horizontal bands of cloud drifting left to right.
-  const sx = (x - t * SKY_SPEED / BLOCK) * 0.075;
+  const sx = (x - drift * SKY_SPEED / BLOCK) * 0.075;
   const sy = y * 0.13;
   let n = valueNoise(sx, sy) * 0.6;
   n += valueNoise(sx * 2.2 + 17, sy * 2.2 - t * 0.03) * 0.28;
@@ -72,4 +74,71 @@ export function blend(data: Uint8ClampedArray, i: number, c: RGB, amount: number
   data[i] += (c[0] - data[i]) * amount;
   data[i + 1] += (c[1] - data[i + 1]) * amount;
   data[i + 2] += (c[2] - data[i + 2]) * amount;
+}
+
+export function clamp(v: number, lo = 0, hi = 1) {
+  return Math.min(hi, Math.max(lo, v));
+}
+
+export function mixN(a: number, b: number, f: number) {
+  return a + (b - a) * f;
+}
+
+// 1D value noise for slow timelines. Lattice positions are folded so huge inputs
+// (stretch numbers on the shared clock) still hash without losing precision.
+export function vnoise1(x: number, seed: number) {
+  const xi = Math.floor(x);
+  const f = x - xi;
+  const u = f * f * (3 - 2 * f);
+  const a = hash(xi & 0xfffff, seed);
+  const b = hash((xi + 1) & 0xfffff, seed);
+  return a + (b - a) * u;
+}
+
+// Layered 1D noise: smooth spells with a little short-term wobble.
+export function fbm1(x: number, seed: number) {
+  return vnoise1(x, seed) * 0.6 + vnoise1(x * 2.13 + 17.3, seed + 1) * 0.28 + vnoise1(x * 4.37 + 5.1, seed + 2) * 0.12;
+}
+
+// Blend one pixel toward c, ignoring anything off the canvas.
+export function plot(img: ImageData, x: number, y: number, c: RGB, amount: number) {
+  if (amount <= 0 || x < 0 || y < 0 || x >= img.width || y >= img.height) return;
+  blend(img.data, (y * img.width + x) * 4, c, Math.min(1, amount));
+}
+
+// Ordered-dither plot: the pixel takes c (at strength) when amount beats its threshold.
+export function dot(img: ImageData, x: number, y: number, c: RGB, amount: number, strength = 1) {
+  if (amount > bayer(x, y)) plot(img, x, y, c, strength);
+}
+
+// Bresenham line, blending every pixel on it.
+export function line(img: ImageData, x0: number, y0: number, x1: number, y1: number, c: RGB, amount: number) {
+  x0 = Math.round(x0);
+  y0 = Math.round(y0);
+  x1 = Math.round(x1);
+  y1 = Math.round(y1);
+  const dx = Math.abs(x1 - x0);
+  const dy = -Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx + dy;
+  for (let guard = 0; guard < 2000; guard++) {
+    plot(img, x0, y0, c, amount);
+    if (x0 === x1 && y0 === y1) break;
+    const e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x0 += sx; }
+    if (e2 <= dx) { err += dx; y0 += sy; }
+  }
+}
+
+// Draw a sprite from rows of characters; each character maps to a colour (or is skipped).
+export function sprite(img: ImageData, x: number, y: number, rows: string[], palette: Record<string, RGB>, amount = 1, flip = false) {
+  const w = rows[0]?.length ?? 0;
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    for (let c = 0; c < row.length; c++) {
+      const color = palette[row[c]];
+      if (color) plot(img, x + (flip ? w - 1 - c : c), y + r, color, amount);
+    }
+  }
 }

@@ -776,13 +776,33 @@ html {
 /* Dot clouds live on a larger layer so they can drift past the box edges */
 .profile-clouds {
   position: absolute;
-  top: calc(var(--spill-y) * -1);
-  left: calc(var(--spill-x) * -1);
+  top: calc(var(--spill) * -1);
+  left: calc(var(--spill) * -1);
   z-index: -1;
-  width: calc(100% + var(--spill-x) * 2);
-  height: calc(100% + var(--spill-y) * 2);
+  width: calc(100% + var(--spill) * 2);
+  height: calc(100% + var(--spill) * 2);
   image-rendering: pixelated;
   pointer-events: none;
+}
+
+/* The name of a sight in the sky, shown while hovering near it or after a tap */
+.profile-sky-tag {
+  position: absolute;
+  z-index: 2;
+  padding: 2px 7px 3px;
+  font: 700 12px/1.25 var(--font-mono);
+  letter-spacing: .02em;
+  white-space: nowrap;
+  color: #fff;
+  background: rgba(10, 12, 20, 0.78);
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 4px));
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+
+.profile-sky-tag[data-shown] {
+  opacity: 1;
 }
 
 .portfolio-shell {

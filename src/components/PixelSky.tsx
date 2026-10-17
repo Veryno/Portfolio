@@ -1,21 +1,20 @@
 import React, { useLayoutEffect, useRef } from 'react';
-import { drawEvents, planCycle } from './sky/events';
+import { FRINGE, drawBase } from './sky/base';
+import { drawFrontClouds, makeCloudPool, type CloudLayer, type DotCloud } from './sky/clouds';
+import type { Tag } from './sky/context';
 import { mixPhase, skyLuminance, type SkyMix } from './sky/phases';
-import { BLOCK, PIXEL, SKY_SPEED, STAR, STAR_DIM, bayer, hash, lerp3, put, skyField, type RGB } from './sky/pixel';
+import { BLOCK, PIXEL, hash, lerp3 } from './sky/pixel';
+import { DAY_SECONDS, planDay, type DayPlan } from './sky/plan';
+import { PREVIEW_DAY, blankPlan, findPreview, playPreview } from './sky/preview';
+import { makeFrame, renderSky } from './sky/render';
+import { applyWeather, weatherAt, type SkyWeather } from './sky/weather';
 
 const REVEAL_SECONDS = 2.4;
-// One full loop of the background: day, sunset, night, sunrise and back to day.
-const CYCLE_SECONDS = 180;
-// How far (in CSS px) the dot clouds may drift outside the box. Keep these
-// multiples of PIXEL * 2 so the dot lattice lines up with the sky pixels.
-const SPILL_X = 96;
-const SPILL_Y = 48;
+// How far (in CSS px) the dot clouds may drift outside the box, the same on every
+// side. Keep it a multiple of PIXEL * 2 so the dot lattice lines up with the sky pixels.
+const SPILL = 96;
 // Overall pace of the dot clouds' drift.
 const CLOUD_SPEED = 0.8;
-
-const SHADOW: RGB = [20, 22, 26];
-// Width of the dark fringe at the wipe front; content only shows behind it.
-const FRINGE = 0.09;
 // Past this the wipe has crossed every block, so the text mask can come off.
 const REVEAL_DONE = 1.6;
 // Text on the sky turns white once the sky's average luminance drops below the
@@ -28,87 +27,14 @@ const INK_DARK_ABOVE = 0.21;
 const INK_SWEEP_SECONDS = 2.5;
 // Height of the front's soft edge, as a share of the text block's height.
 const INK_FEATHER = 0.15;
+// How long a sight's name tag stays up after a tap on a touch screen.
+const TAG_SECONDS = 2.5;
 
 function setMask(el: HTMLElement, mask: string | null) {
   for (const prop of ['mask-image', '-webkit-mask-image']) {
     if (mask) el.style.setProperty(prop, mask);
     else el.style.removeProperty(prop);
   }
-}
-
-// A twinkling star at sky pixel (x, y), or null. Keyed to the drifting sky so
-// stars travel with it; more of them come out as amount rises toward full night.
-function starAt(x: number, y: number, t: number, amount: number): RGB | null {
-  if (hash(x * 7 + 3, y * 13 + 5) >= 0.006) return null;
-  const twinkle = 0.5 + 0.5 * Math.sin(t * (1.2 + hash(x, y + 77) * 2.5) + hash(x + 9, y) * Math.PI * 2);
-  if (amount * (0.35 + 0.65 * twinkle) <= hash(x + 31, y + 41) * 0.5 + 0.35) return null;
-  return twinkle > 0.6 ? STAR : STAR_DIM;
-}
-
-type DotCloud = {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  speed: number;
-  bobAmp: number;
-  bobRate: number;
-  bobPhase: number;
-  // Round puffs [centre x offset, radius]; their union above a flat base is the cloud.
-  lobes: [number, number][];
-};
-
-function makeClouds(cols: number, rows: number, seed: number): DotCloud[] {
-  const clouds: DotCloud[] = [];
-  const count = Math.max(6, Math.round((cols * rows) / 2400));
-  for (let i = 0; i < count; i++) {
-    // Mix of small puffs, mid-size cumulus and a few big banks; squaring the
-    // random value keeps small clouds common and large ones rare.
-    const size = hash(i, seed + 3);
-    const scale = 0.45 + size * size * 1.8;
-    const lobeCount = 3 + Math.floor(hash(i, seed + 6) * (scale > 1 ? 4 : 2));
-    const spacing = 5.5 * scale;
-    const lobes: [number, number][] = [];
-    for (let l = 0; l < lobeCount; l++) {
-      // Spread puffs across the cloud: big ones in the middle tapering to the ends,
-      // with the tallest puff nudged off-centre so clouds aren't symmetric.
-      const pos = l - (lobeCount - 1) / 2;
-      const norm = lobeCount > 1 ? pos / ((lobeCount - 1) / 2) : 0;
-      const peak = (hash(i, seed + 7) - 0.5) * 0.8;
-      const falloff = 1 - Math.min(1, Math.abs(norm - peak)) * 0.55;
-      const jitter = 0.8 + hash(i * 11 + l, seed + 9) * 0.4;
-      lobes.push([pos * spacing + (hash(i * 11 + l, seed + 8) - 0.5) * 2, 7 * scale * falloff * jitter]);
-    }
-    const left = Math.min(...lobes.map(([o, r]) => o - r));
-    const right = Math.max(...lobes.map(([o, r]) => o + r));
-    // Speeds range from a lazy crawl to a quick dash; a few clouds are much faster.
-    const fast = hash(i, seed + 12) > 0.8;
-    const w = right - left;
-    clouds.push({
-      x: hash(i, seed + 1) * (cols + w * 2),
-      y: rows * (0.06 + 0.92 * hash(i, seed + 2)),
-      w,
-      h: Math.max(...lobes.map(([, r]) => r * 1.5)),
-      speed: (fast ? 14 + hash(i, seed + 5) * 12 : 1.5 + hash(i, seed + 5) * 9) * CLOUD_SPEED,
-      bobAmp: 1 + hash(i, seed + 13) * 6,
-      bobRate: 0.15 + hash(i, seed + 14) * 0.5,
-      bobPhase: hash(i, seed + 15) * Math.PI * 2,
-      lobes: lobes.map(([o, r]) => [o - (left + right) / 2, r]),
-    });
-  }
-  return clouds;
-}
-
-// How far inside the cloud a point is: > 0 inside, < 0 outside, ~0 on the outline.
-function cloudDepth(cloud: DotCloud, dx: number, up: number) {
-  if (up < 0) return -1;
-  let depth = -Infinity;
-  for (const [offset, r] of cloud.lobes) {
-    // Puff centres sit a little above the base so the bottom stays flat.
-    const cy = r * 0.5;
-    depth = Math.max(depth, r - Math.hypot(dx - offset, up - cy));
-  }
-  return depth;
 }
 
 // Ragged, stair-stepped reveal front sweeping from the top-left.
@@ -123,12 +49,16 @@ type PixelSkyProps = {
   revealTarget?: React.RefObject<HTMLElement | null>;
 };
 
-// The sky cycles through a day every three minutes on a clock every visitor
-// shares, with the occasional sun, moon, shooting star or ISS pass. While the sky
-// is dark it marks its parent box data-sky-ink="light" so the text on it turns white.
+type SkyNow = { n: number; u: number; weather: SkyWeather; plan: DayPlan };
+
+// The sky runs through a day every three minutes on a clock every visitor shares,
+// with weather that changes over its own timeline and sights rolled for each day.
+// While the sky is dark it marks its parent box data-sky-ink="light" so the text
+// on it turns white. Adding ?sky=<name> to the address plays one sight on a loop.
 export function PixelSky({ className, revealTarget }: PixelSkyProps) {
   const skyRef = useRef<HTMLCanvasElement>(null);
   const cloudRef = useRef<HTMLCanvasElement>(null);
+  const tagRef = useRef<HTMLSpanElement>(null);
 
   // Layout effect so the text is masked before the first paint.
   useLayoutEffect(() => {
@@ -139,143 +69,89 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
     if (!sky || !cloudCanvas || !skyCtx || !cloudCtx) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const preview = findPreview(new URLSearchParams(window.location.search).get('sky'));
     let cols = 0;
     let rows = 0;
-    let cloudCols = 0;
-    let cloudRows = 0;
-    let spillX = 0;
-    let spillY = 0;
     let skyImage: ImageData | null = null;
-    let cloudImage: ImageData | null = null;
+    let layer: CloudLayer | null = null;
+    let field = new Float32Array(1);
     let clouds: DotCloud[] = [];
     let frame = 0;
     const start = performance.now();
+    let last = start;
+    // How far the background bands and the dot clouds have drifted. The wind sets
+    // their pace and turns them around when it changes direction.
+    let travel = reduceMotion ? 40 : 0;
+    let cloudTravel = reduceMotion ? 40 : 0;
     const content = revealTarget?.current ?? null;
     const target = reduceMotion ? null : content;
     let masking = !!target;
-    // Everyone shares one sky: the loop runs off the wall clock, so every visitor
-    // sees the same phase and the same events at the same moment.
-    const skyClock = () => Date.now() / 1000 / CYCLE_SECONDS;
-    let cycle = Math.floor(skyClock());
-    let plan = planCycle(cycle);
     const box = sky.parentElement;
+
+    // Everyone shares one sky: the day runs off the wall clock, so every visitor
+    // sees the same weather and the same sights at the same moment. A preview
+    // instead plays its sight on a loop from when the page opened.
+    let plan: DayPlan | null = null;
+    let planDayNumber = -1;
+    if (preview) {
+      plan = blankPlan(PREVIEW_DAY);
+      preview.setup?.(plan, preview.u);
+    }
+    const skyNow = (t: number): SkyNow => {
+      if (preview && plan) return { ...playPreview(preview, plan, t), plan };
+      const days = Date.now() / 1000 / DAY_SECONDS;
+      const n = Math.floor(days);
+      if (n !== planDayNumber || !plan) {
+        plan = planDay(n);
+        planDayNumber = n;
+      }
+      return { n, u: days - n, weather: weatherAt(n, days - n), plan };
+    };
+
     // Open with the text colour that suits the sky right now; later changes sweep.
-    let inkLight = skyLuminance(mixPhase(skyClock() - cycle)) < INK_LIGHT_BELOW;
+    const opening = skyNow(0);
+    let inkLight = skyLuminance(applyWeather(mixPhase(opening.u), opening.weather)) < INK_LIGHT_BELOW;
     if (inkLight) box?.setAttribute('data-sky-ink', 'light');
     let inkSweep: { light: boolean; start: number; ghost: HTMLElement } | null = null;
+
+    // Name tags: hovering (or tapping) near a sight shows what it is.
+    let tags: Tag[] = [];
+    let pointer: { x: number; y: number; until: number } | null = null;
+    let tagName = '';
+    const pointAt = (e: PointerEvent, until: number) => {
+      const rect = sky.getBoundingClientRect();
+      pointer = { x: ((e.clientX - rect.left) / rect.width) * cols, y: ((e.clientY - rect.top) / rect.height) * rows, until };
+    };
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') pointAt(e, Infinity);
+    };
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') pointAt(e, performance.now() + TAG_SECONDS * 1000);
+    };
+    const onLeave = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') pointer = null;
+    };
+    box?.addEventListener('pointermove', onMove);
+    box?.addEventListener('pointerdown', onDown);
+    box?.addEventListener('pointerleave', onLeave);
 
     const resize = () => {
       const rect = sky.getBoundingClientRect();
       const cloudRect = cloudCanvas.getBoundingClientRect();
       cols = Math.max(1, Math.ceil(rect.width / PIXEL));
       rows = Math.max(1, Math.ceil(rect.height / PIXEL));
-      cloudCols = Math.max(1, Math.ceil(cloudRect.width / PIXEL));
-      cloudRows = Math.max(1, Math.ceil(cloudRect.height / PIXEL));
-      spillX = Math.round((rect.left - cloudRect.left) / PIXEL);
-      spillY = Math.round((rect.top - cloudRect.top) / PIXEL);
+      const cloudCols = Math.max(1, Math.ceil(cloudRect.width / PIXEL));
+      const cloudRows = Math.max(1, Math.ceil(cloudRect.height / PIXEL));
+      const spillX = Math.round((rect.left - cloudRect.left) / PIXEL);
+      const spillY = Math.round((rect.top - cloudRect.top) / PIXEL);
       sky.width = cols;
       sky.height = rows;
       cloudCanvas.width = cloudCols;
       cloudCanvas.height = cloudRows;
       skyImage = skyCtx.createImageData(cols, rows);
-      cloudImage = cloudCtx.createImageData(cloudCols, cloudRows);
-      clouds = makeClouds(cloudCols, cloudRows, 11);
-    };
-
-    const drawSky = (t: number, reveal: number, mix: SkyMix) => {
-      if (!skyImage) return;
-      const data = skyImage.data;
-      const blockCols = Math.ceil(cols / BLOCK);
-      const blockRows = Math.ceil(rows / BLOCK);
-      const levels = mix.top.length;
-      const shift = Math.floor(t * SKY_SPEED);
-
-      for (let by = 0; by < blockRows; by++) {
-        // This row's palette: the phase's top colours fading into its horizon colours.
-        const gy = blockRows > 1 ? by / (blockRows - 1) : 0;
-        const palette = mix.top.map((c, l) => lerp3(c, mix.bottom[l], gy).map(Math.round) as RGB);
-        for (let bx = 0; bx < blockCols; bx++) {
-          const edge = reveal - revealFront(bx, by, blockCols, blockRows);
-          const value = skyField(bx, by, t);
-          const level = value * (levels - 1);
-          const lo = Math.floor(level);
-          // Snap most blocks to a solid colour and only dither the in-between ones.
-          const raw = level - lo;
-          const frac = raw < 0.3 ? 0 : raw > 0.7 ? 1 : (raw - 0.3) / 0.4;
-          // Stars only show through the darker, clear patches of sky.
-          const starry = mix.stars > 0 && value < 0.42;
-
-          for (let py = 0; py < BLOCK; py++) {
-            const y = by * BLOCK + py;
-            if (y >= rows) break;
-            for (let px = 0; px < BLOCK; px++) {
-              const x = bx * BLOCK + px;
-              if (x >= cols) break;
-              const i = (y * cols + x) * 4;
-              const threshold = bayer(x, y);
-              let color: RGB | null;
-              if (edge < 0) {
-                color = null;
-              } else if (edge < FRINGE) {
-                // Dark checkered fringe right at the wipe front.
-                color = threshold < (edge < 0.045 ? 0.35 : 0.65) ? SHADOW : null;
-              } else {
-                color = palette[Math.min(levels - 1, frac > threshold ? lo + 1 : lo)];
-                if (starry) color = starAt(x - shift, y, t, mix.stars) ?? color;
-              }
-              if (color) {
-                put(data, i, color);
-                data[i + 3] = 255;
-              } else {
-                data[i + 3] = 0;
-              }
-            }
-          }
-        }
-      }
-    };
-
-    // The dot clouds take on a little of the sky's colour: warm at sunrise and
-    // sunset, moonlit blue at night.
-    const drawClouds = (t: number, reveal: number, tint: RGB) => {
-      if (!cloudImage) return;
-      const data = cloudImage.data;
-      data.fill(0);
-      const appear = Math.min(1, Math.max(0, reveal - 0.4) * 1.5);
-      if (appear === 0) return;
-      const [r, g, b] = tint.map(Math.round);
-
-      for (let ci = 0; ci < clouds.length; ci++) {
-        const cloud = clouds[ci];
-        const span = cloudCols + cloud.w * 2;
-        const cx = ((((cloud.x - t * cloud.speed) % span) + span) % span) - cloud.w;
-        const x0 = Math.floor(cx - cloud.w / 2) - 1;
-        const base = Math.round(cloud.y + Math.sin(t * cloud.bobRate + cloud.bobPhase) * cloud.bobAmp);
-        for (let x = x0; x <= x0 + cloud.w + 2; x++) {
-          if (x < 0 || x >= cloudCols || x & 1) continue;
-          const dx = x - cx;
-          for (let y = base - Math.ceil(cloud.h); y <= base; y++) {
-            if (y < 0 || y >= cloudRows || y & 1) continue;
-            const depth = cloudDepth(cloud, dx, base - y);
-            if (depth < 0) continue;
-            // Solid body with a slightly broken, sparkly outline. The hash is keyed
-            // to the cloud's own grid so the pattern doesn't shimmer as it drifts.
-            const outline = depth < 1.6;
-            const keep = outline ? 0.55 : 0.97;
-            if (hash(Math.round(dx) * 31 + ci, base - y) > keep * appear) continue;
-            // Dots outside the box are slightly dimmer so they read as spill.
-            const sx = x - spillX;
-            const sy = y - spillY;
-            const inside = sx >= 0 && sy >= 0 && sx < cols && sy < rows;
-            const i = (y * cloudCols + x) * 4;
-            data[i] = r;
-            data[i + 1] = g;
-            data[i + 2] = b;
-            data[i + 3] = inside ? 255 : 200;
-          }
-        }
-      }
-      cloudCtx.putImageData(cloudImage, 0, 0);
+      field = new Float32Array(Math.ceil(cols / BLOCK) * Math.ceil(rows / BLOCK) + 8);
+      layer = { img: cloudCtx.createImageData(cloudCols, cloudRows), cols: cloudCols, rows: cloudRows, spillX, spillY, boxCols: cols, boxRows: rows };
+      clouds = makeCloudPool(cloudCols, cloudRows, 11, spillY, CLOUD_SPEED);
     };
 
     const clearMask = () => {
@@ -355,41 +231,89 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
       const blockCols = Math.ceil(cols / BLOCK);
       const blockRows = Math.ceil(rows / BLOCK);
       const blockSize = BLOCK * PIXEL;
-      const box = sky.getBoundingClientRect();
+      const rect = sky.getBoundingClientRect();
       const own = target.getBoundingClientRect();
-      const ox = box.left - own.left;
-      const oy = box.top - own.top;
+      const ox = rect.left - own.left;
+      const oy = rect.top - own.top;
       const points = [`${ox}px ${oy}px`];
       for (let by = 0; by < blockRows; by++) {
         let shown = 0;
         while (shown < blockCols && reveal - revealFront(shown, by, blockCols, blockRows) >= FRINGE) shown++;
-        const x = ox + Math.min(shown * blockSize, box.width);
+        const x = ox + Math.min(shown * blockSize, rect.width);
         const y = oy + by * blockSize;
-        points.push(`${x}px ${y}px`, `${x}px ${Math.min(y + blockSize, oy + box.height)}px`);
+        points.push(`${x}px ${y}px`, `${x}px ${Math.min(y + blockSize, oy + rect.height)}px`);
       }
-      points.push(`${ox}px ${oy + box.height}px`);
+      points.push(`${ox}px ${oy + rect.height}px`);
       target.style.clipPath = `polygon(${points.join(', ')})`;
+    };
+
+    // Show the name of the sight under the pointer, over the sight itself (or by the
+    // pointer for things that fill the sky, like a snowstorm). Once up, a tag
+    // follows its sight for a moment even after it drifts out from under the pointer.
+    let tagSeen = 0;
+    const showTag = (now: number) => {
+      const el = tagRef.current;
+      if (!el) return;
+      if (pointer && now > pointer.until) pointer = null;
+      let hit: Tag | null = null;
+      if (pointer) {
+        let best = Infinity;
+        for (const tag of tags) {
+          const d = Math.hypot(tag.x - pointer.x, tag.y - pointer.y);
+          if (d <= tag.r + 6 && d < best) {
+            best = d;
+            hit = tag;
+          }
+        }
+        if (hit) tagSeen = now;
+        else if (tagName && now - tagSeen < 1200) hit = tags.find((tag) => tag.name === tagName) ?? null;
+      }
+      if (!hit || !pointer) {
+        if (tagName) {
+          el.removeAttribute('data-shown');
+          tagName = '';
+        }
+        return;
+      }
+      if (hit.name !== tagName) {
+        el.textContent = hit.name;
+        el.setAttribute('data-shown', '');
+        tagName = hit.name;
+      }
+      const wide = hit.r > cols / 5;
+      const x = wide ? pointer.x : hit.x;
+      const y = wide ? pointer.y - 2 : hit.y - Math.min(hit.r, 12);
+      el.style.left = `${(Math.min(cols - 4, Math.max(4, x)) / cols) * 100}%`;
+      el.style.top = `${(Math.max(6, y) / rows) * 100}%`;
     };
 
     const draw = (now: number) => {
       const t = reduceMotion ? 40 : (now - start) / 1000;
+      const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+      last = now;
       const reveal = reduceMotion ? 3 : Math.min(3, (t / REVEAL_SECONDS) * 1.5);
-      // Reduced motion shows the current shared sky as a still frame, without events.
-      const cycles = skyClock();
-      if (Math.floor(cycles) !== cycle) {
-        cycle = Math.floor(cycles);
-        plan = planCycle(cycle);
+      const { n, u, weather, plan: today } = skyNow(t);
+      if (!reduceMotion) {
+        travel += dt * (0.6 + weather.wind * 1.6) * (weather.windDir >= 0 ? 1 : -1) * Math.max(0.15, Math.abs(weather.windDir));
+        cloudTravel += dt * (0.55 + weather.wind * 1.5) * weather.windDir;
       }
-      const u = cycles - cycle;
-      const mix = mixPhase(u);
-      drawSky(t, reveal, mix);
-      if (skyImage) {
-        if (!reduceMotion) drawEvents(skyImage, t, u, mix, plan, CYCLE_SECONDS);
+      if (skyImage && layer) {
+        const f = makeFrame({ img: skyImage, field, t, sec: Date.now() / 1000, u, n, dayLength: DAY_SECONDS, plan: today, weather, travel });
+        const blockCols = Math.ceil(cols / BLOCK);
+        const blockRows = Math.ceil(rows / BLOCK);
+        drawBase(f, (bx, by) => reveal - revealFront(bx, by, blockCols, blockRows));
+        // Reduced motion shows the shared sky as a still frame, without the sights.
+        if (!reduceMotion) renderSky(f);
         skyCtx.putImageData(skyImage, 0, 0);
+        const appear = Math.min(1, Math.max(0, reveal - 0.4) * 1.5);
+        const behind = lerp3(f.mix.top[2], f.mix.bottom[2], 0.5);
+        drawFrontClouds(layer, clouds, t, cloudTravel, weather, f.mix.cloud, behind, appear, f.flash);
+        cloudCtx.putImageData(layer.img, 0, 0);
+        tags = reveal > REVEAL_DONE ? f.tags : [];
+        updateInk(f.mix, t);
       }
-      drawClouds(t, reveal, mix.cloud);
       drawMask(reveal);
-      updateInk(mix, t);
+      showTag(now);
       if (!reduceMotion) frame = requestAnimationFrame(draw);
     };
 
@@ -406,6 +330,9 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+      box?.removeEventListener('pointermove', onMove);
+      box?.removeEventListener('pointerdown', onDown);
+      box?.removeEventListener('pointerleave', onLeave);
       clearMask();
       endSweep();
       box?.removeAttribute('data-sky-ink');
@@ -419,8 +346,9 @@ export function PixelSky({ className, revealTarget }: PixelSkyProps) {
         ref={cloudRef}
         className="profile-clouds"
         aria-hidden="true"
-        style={{ '--spill-x': `${SPILL_X}px`, '--spill-y': `${SPILL_Y}px` } as React.CSSProperties}
+        style={{ '--spill': `${SPILL}px` } as React.CSSProperties}
       />
+      <span ref={tagRef} className="profile-sky-tag" aria-hidden="true" />
     </>
   );
 }
